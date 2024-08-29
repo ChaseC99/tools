@@ -1,4 +1,16 @@
-# Astro Starter Kit: Minimal
+# Tools
+A collection of simple web tools that might be useful.
+
+Some initial ideas:
+- [ ] QR code generator
+- [ ] Word counter
+- [ ] BMI calculator
+- [ ] Timer
+
+These things are alread available on other sites, but I realized a lot of them kind of suck.
+So I'm making my own with (hopefully) nicer UI and without ads (for now).
+
+## Astro Starter Kit: Minimal
 
 ```sh
 npm create astro@latest -- --template minimal
