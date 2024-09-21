@@ -1,0 +1,31 @@
+---
+import ToolsList from '../components/ToolsList.astro';
+
+const { title } = Astro.props;
+---
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <link rel="icon" href="/favicon.ico" />
+        <meta name="viewport" content="width=device-width" />
+        <meta name="generator" content={Astro.generator} />
+        <title>{title}</title>
+    </head>
+    <body>
+        <h1>{title}</h1>
+        <ToolsList />
+        <slot />
+    </body>
+</html>
+
+<style is:global>
+    body {
+        font-family: system-ui, sans-serif;
+    }
+</style>
+
+<style>
+    h1 {
+        text-align: center;
+    }
+</style>

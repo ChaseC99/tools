@@ -1,0 +1,26 @@
+---
+import ToolTile from "./ToolTile.astro";
+
+const tools = [
+    { name: "QR Code", id: "qr" },
+    { name: "Color Picker", id: "color-picker" },
+    { name: "BMI Calculator", id: "bmi" },
+    { name: "Text Diff", id: "text-diff"},
+    { name: "JSON Formatter", id: "json"},
+    { name: "Party Emoji", id: "party-emoji"},
+    { name: "Timer", id: "timer"}
+];
+---
+
+<div>
+    {tools.map((tool) => <ToolTile name={tool.name} id={tool.id} />)}
+</div>
+
+<style>
+    div {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 4px;
+        justify-content: center;
+    }
+</style>

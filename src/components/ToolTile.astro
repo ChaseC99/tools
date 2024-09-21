@@ -1,0 +1,39 @@
+---
+const { name, id } = Astro.props;
+const link = `/${id}`;
+---
+
+<a class="card" href={link}>
+    <h2>{name}</h2>
+    <img src={`/tools/${id}.svg`} alt={`${name} icon`} />
+</a>
+
+<style>
+    .card {
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin: 8px;
+        padding: 8px;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        text-decoration: none;
+        color: inherit;
+        justify-content: space-between;
+    }
+
+    .card:hover {
+        background-color: #f9f9f9;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transform: scale(1.02);
+    }
+
+    h2 {
+        font-size: 1rem;
+    }
+
+    img {
+        height: 2rem;
+        width: 2rem;
+    }
+</style>
