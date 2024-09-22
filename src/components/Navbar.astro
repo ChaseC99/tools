@@ -1,0 +1,67 @@
+---
+import ToolsList from "./ToolsList.astro";
+const { title } = Astro.props;
+---
+
+<nav class="navbar">
+    <div class="navbar-items">
+        <h1>{title}</h1>
+        <img 
+            id='tools-dropdown'
+            src='/icons/tool.svg' 
+            alt='Tools dropdown icon' 
+            height=30
+            role="button"
+            tabindex="0"
+        />
+    </div>
+    <div id="tools">
+        <ToolsList />
+    </div>
+</nav>
+
+<style>
+    h1 {
+        margin: 0;
+    }
+
+    .navbar-items {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+    }
+
+    #tools-dropdown {
+        cursor: pointer;
+        transition: transform 0.3s ease-in-out;
+    }
+
+    #tools-dropdown.expanded {
+        transform: rotate(-90deg);   
+    }
+
+    #tools {
+        display: none;
+    }
+
+    #tools.show {   
+        display: block;
+    }
+</style>
+
+<script>
+    const dropdown = document.getElementById('tools-dropdown');
+    const toggleDropdown = () => {
+        document.getElementById('tools').classList.toggle('show');
+        document.getElementById('tools-dropdown').classList.toggle('expanded');
+    };
+
+    dropdown.addEventListener('click', toggleDropdown);
+
+    dropdown.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            toggleDropdown();
+        }
+    });
+</script>
