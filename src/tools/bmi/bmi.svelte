@@ -5,7 +5,14 @@
     $: height = feet * 12 + inches;
     let weight;
 
+    $: infoInputted = !!height && !!weight;
+
     $: bmi = (weight / (height * height)) * 703;
+
+    $: isUnderweight = bmi < 18.5 && infoInputted;
+    $: isNormalWeight = 18.5 < bmi && bmi < 24.9 && infoInputted;
+    $: isOverweight = 25 < bmi && bmi < 29.9 && infoInputted;
+    $: isObese = bmi > 30 && infoInputted;
 
     function selectText(event) {
         event.target.select();
@@ -53,7 +60,7 @@
         <div class="input-section">
             BMI
             <div id="bmi">
-                {height & weight ? bmi.toFixed(2) : "__.__"}
+                {infoInputted ? bmi.toFixed(2) : "__.__"}
             </div>
         </div>
     </div>
@@ -62,17 +69,33 @@
         <!-- bmi categories -->
         <div class="table-row">
             <b>BMI</b>
-            <span>&lt; 18.5</span>
-            <span>18.5 - 24.9</span>
-            <span>25 - 29.9</span>
-            <span>&gt; 30</span>
+            <span class:warn-color={isUnderweight}>
+                &lt; 18.5
+            </span>
+            <span class:good-color={isNormalWeight}>
+                18.5 - 24.9
+            </span>
+            <span class:warn-color={isOverweight}>
+                25 - 29.9
+            </span>
+            <span class:danger-color={isObese}>
+                &gt; 30
+            </span>
         </div>
         <div class="table-row">
             <b>Category</b>
-            <span>Underweight</span>
-            <span>Normal weight</span>
-            <span>Overweight</span>
-            <span>Obesity</span>
+            <span class:warn-color={isUnderweight}>
+                Underweight
+            </span>
+            <span class:good-color={isNormalWeight}>
+                Normal weight
+            </span>
+            <span class:warn-color={isOverweight}>
+                Overweight
+            </span>
+            <span class:danger-color={isObese}>
+                Obesity
+            </span>
         </div>
     </div>
 </main>
@@ -90,6 +113,18 @@
         gap: 5rem;
 
         margin: 2rem 0;
+    }
+
+    .warn-color {
+        color: #f68e48;
+    }
+
+    .good-color {
+        color: #0c0;
+    }
+
+    .danger-color {
+        color: #d00;
     }
 
     #bmi {
