@@ -6,14 +6,23 @@ const { title } = Astro.props;
 <nav class="navbar">
     <div class="navbar-items">
         <h1>{title}</h1>
-        <img 
-            id='tools-dropdown'
-            src='/icons/tool.svg' 
-            alt='Tools dropdown icon' 
-            height=30
-            role="button"
-            tabindex="0"
-        />
+        <div class="navbar-tools-side">
+            <input 
+                type="search" 
+                placeholder="Search tools" 
+                aria-label="Search tools"
+                id="search"
+                autocomplete="off"
+            />
+            <img 
+                id='tools-dropdown'
+                src='/icons/tool.svg' 
+                alt='Tools dropdown icon' 
+                height=30
+                role="button"
+                tabindex="0"
+            />
+        </div>
     </div>
     <div id="tools">
         <ToolsList />
@@ -32,6 +41,39 @@ const { title } = Astro.props;
         padding: 1rem;
     }
 
+    .navbar-tools-side {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    #search {
+        padding: 0.5rem;
+        border-radius: 0 8px 8px 0;
+        border: 1px solid #ccc;
+        border-left: none;
+
+        border-color: transparent;
+
+        width: 0;
+        visibility: hidden;
+        transition: width 0.2s ease-in-out, visibility 0.2s ease-in-out, border-color 0.25s ease-in-out;
+    }
+
+    #search.show {
+        width: 200px;
+
+        /* Hide search bar until functionality is ready */
+        visibility: hidden; 
+
+        border-radius: 8px;
+        border-left: 1px solid #ccc;
+
+        border-color: #ccc;
+
+        transition: width 0.2s ease-in-out, visibility 0.2s ease-in-out, border-color 0.25s ease-in-out;
+    }
+
     #tools-dropdown {
         cursor: pointer;
         transition: transform 0.3s ease-in-out;
@@ -42,11 +84,23 @@ const { title } = Astro.props;
     }
 
     #tools {
-        display: none;
+        position: absolute;
+        left: 0;
+        top: 75px;
+        width: 100%;
+        background-color: white;
+
+        max-height: 0;
+        visibility: hidden;
+        overflow: hidden;
+        transition: max-height 0.3s ease-in-out, visibility 0.3s ease-in-out;
     }
 
     #tools.show {   
         display: block;
+        visibility: visible;
+        max-height: 100vh;
+        transition:  max-height 0.3s ease-in-out, visibility 0.3s ease-in-out;
     }
 </style>
 
@@ -54,6 +108,7 @@ const { title } = Astro.props;
     const dropdown = document.getElementById('tools-dropdown');
     const toggleDropdown = () => {
         document.getElementById('tools').classList.toggle('show');
+        document.getElementById('search').classList.toggle('show');
         document.getElementById('tools-dropdown').classList.toggle('expanded');
     };
 
