@@ -58,26 +58,22 @@
         </div>
     </div>
 
-    <div class="row">
+    <div class="bmi-table">
         <!-- bmi categories -->
-        <table>
-            <tbody>
-                <tr>
-                    <th>BMI</th>
-                    <td>&lt; 18.5</td>
-                    <td>18.5 - 24.9</td>
-                    <td>25 - 29.9</td>
-                    <td>&gt; 30</td>
-                </tr>
-                <tr>
-                    <th>Category</th>
-                    <td>Underweight</td>
-                    <td>Normal weight</td>
-                    <td>Overweight</td>
-                    <td>Obesity</td>
-                </tr>
-            </tbody>
-        </table>
+        <div class="table-row">
+            <b>BMI</b>
+            <span>&lt; 18.5</span>
+            <span>18.5 - 24.9</span>
+            <span>25 - 29.9</span>
+            <span>&gt; 30</span>
+        </div>
+        <div class="table-row">
+            <b>Category</b>
+            <span>Underweight</span>
+            <span>Normal weight</span>
+            <span>Overweight</span>
+            <span>Obesity</span>
+        </div>
     </div>
 </main>
 
@@ -147,12 +143,43 @@
         appearance: none;
     }
 
-    table {
-        border-collapse: collapse;
+    .bmi-table {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        background-color: #eee;
+        border-radius: 0.5rem;
+        padding: 1rem;
     }
 
-    th, td {
-        padding: 0.5rem 1rem;
-        border: 1px solid #ccc;
+    .table-row {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        gap: 32px;
+    }
+
+    .table-row span, .table-row b {
+        flex: 1;
+
+    }
+
+    /* Handle mobile screens */
+    @media (max-width: 600px) {
+        .row {
+            flex-direction: column;
+            gap: 1rem;
+            align-items: start;
+        }
+
+        .table-row {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .bmi-table {
+            flex-direction: row;
+            gap: 48px;
+        }
     }
 </style>
