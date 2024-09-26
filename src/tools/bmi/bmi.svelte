@@ -10,9 +10,9 @@
     $: bmi = (weight / (height * height)) * 703;
 
     $: isUnderweight = bmi < 18.5 && infoInputted;
-    $: isNormalWeight = 18.5 < bmi && bmi < 24.9 && infoInputted;
-    $: isOverweight = 25 < bmi && bmi < 29.9 && infoInputted;
-    $: isObese = bmi > 30 && infoInputted;
+    $: isNormalWeight = 18.5 <= bmi && bmi < 25 && infoInputted;
+    $: isOverweight = 25 <= bmi && bmi < 30 && infoInputted;
+    $: isObese = bmi >= 30 && infoInputted;
 
     function selectText(event) {
         event.target.select();
