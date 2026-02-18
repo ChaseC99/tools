@@ -1,0 +1,500 @@
+---
+import PageLayout from "@layouts/PageLayout.astro";
+---
+
+<PageLayout title="Party Emoji Generator">
+	<div class="party-tool">
+		<p class="description">Upload an image to generate an animated "party parrot"-style emoji with wobble and rainbow effects.<br/>Download the result as a GIF ready to use in Slack.</p>
+		<div class="card">
+			<div id="drop-zone" class="drop-zone">
+				<div class="drop-icon">&#x1F5BC;&#xFE0F;</div>
+				<p>Drop an image here or click to upload</p>
+				<span class="drop-hint">PNG, JPG, GIF — will be resized to 128x128</span>
+				<input type="file" id="file-input" accept="image/*" />
+			</div>
+
+			<div id="preview-area" class="preview-area hidden">
+				<div class="canvas-wrap">
+					<canvas id="preview" width="128" height="128"></canvas>
+				</div>
+				<span id="file-name" class="file-name"></span>
+				<a id="new-image-link" class="new-image-link" href="#">Change image</a>
+			</div>
+
+			<div id="controls-panel" class="controls-panel hidden">
+				<div class="toggles">
+					<label class="pill-toggle">
+						<input type="checkbox" id="wobble-toggle" checked />
+						<span class="pill"></span>
+						Wobble
+					</label>
+					<label class="pill-toggle">
+						<input type="checkbox" id="color-toggle" checked />
+						<span class="pill"></span>
+						Rainbow
+					</label>
+				</div>
+
+				<div class="speed-row">
+					<label for="speed-range">Speed</label>
+					<input type="range" id="speed-range" min="20" max="240" value="120" />
+				</div>
+
+				<button id="download-btn" class="download-btn" disabled>
+					<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8m0 0l-3-3m3 3l3-3M2 13h12"/></svg>
+					Download GIF
+				</button>
+			</div>
+		</div>
+	</div>
+
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
+	<script>
+		const SIZE = 128;
+		const WOBBLE_RADIUS = 4;
+		const FRAME_COUNT = 10;
+		const TINT_ALPHA = 0.45;
+
+		const canvas = document.getElementById("preview") as HTMLCanvasElement;
+		const ctx = canvas.getContext("2d")!;
+		const dropZone = document.getElementById("drop-zone")!;
+		const fileInput = document.getElementById("file-input") as HTMLInputElement;
+		const speedRange = document.getElementById("speed-range") as HTMLInputElement;
+		const downloadBtn = document.getElementById("download-btn") as HTMLButtonElement;
+		const newImageLink = document.getElementById("new-image-link") as HTMLAnchorElement;
+		const wobbleToggle = document.getElementById("wobble-toggle") as HTMLInputElement;
+		const colorToggle = document.getElementById("color-toggle") as HTMLInputElement;
+		const previewArea = document.getElementById("preview-area")!;
+		const controlsPanel = document.getElementById("controls-panel")!;
+		const fileNameEl = document.getElementById("file-name")!;
+
+		let sourceImage: HTMLImageElement | null = null;
+		let fileName = "image";
+		let animFrame = 0;
+		let animId: number | null = null;
+
+		// --- Upload handling ---
+		dropZone.addEventListener("click", () => fileInput.click());
+
+		dropZone.addEventListener("dragover", (e) => {
+			e.preventDefault();
+			dropZone.classList.add("drag-over");
+		});
+
+		dropZone.addEventListener("dragleave", () => {
+			dropZone.classList.remove("drag-over");
+		});
+
+		dropZone.addEventListener("drop", (e) => {
+			e.preventDefault();
+			dropZone.classList.remove("drag-over");
+			const file = e.dataTransfer?.files[0];
+			if (file) loadImage(file);
+		});
+
+		fileInput.addEventListener("change", () => {
+			const file = fileInput.files?.[0];
+			if (file) loadImage(file);
+		});
+
+		function loadImage(file: File) {
+			fileName = file.name.replace(/\.[^.]+$/, "");
+			fileNameEl.textContent = file.name;
+			const reader = new FileReader();
+			reader.onload = () => {
+				const img = new Image();
+				img.onload = () => {
+					sourceImage = img;
+					downloadBtn.disabled = false;
+					downloadBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8m0 0l-3-3m3 3l3-3M2 13h12"/></svg> Download GIF';
+					dropZone.classList.add("hidden");
+					previewArea.classList.remove("hidden");
+					controlsPanel.classList.remove("hidden");
+					startAnimation();
+				};
+				img.src = reader.result as string;
+			};
+			reader.readAsDataURL(file);
+		}
+
+		// --- New image ---
+		newImageLink.addEventListener("click", (e) => {
+			e.preventDefault();
+			fileInput.click();
+		});
+
+		// --- Wobble toggle disables speed slider ---
+		const speedRow = speedRange.closest(".speed-row")!;
+		wobbleToggle.addEventListener("change", () => {
+			const off = !wobbleToggle.checked;
+			speedRange.disabled = off;
+			speedRow.classList.toggle("disabled", off);
+		});
+
+		// --- Animation ---
+		function drawFrame(target: CanvasRenderingContext2D, frame: number, totalFrames: number, wobble = wobbleToggle.checked, rainbow = colorToggle.checked) {
+			const w = target.canvas.width;
+			const h = target.canvas.height;
+			const angle = (frame / totalFrames) * Math.PI * 2;
+			const hue = (frame / totalFrames) * 360;
+
+			const ox = wobble ? Math.cos(angle) * WOBBLE_RADIUS : 0;
+			const oy = wobble ? Math.sin(angle) * WOBBLE_RADIUS : 0;
+
+			target.clearRect(0, 0, w, h);
+			target.save();
+
+			// Draw image fitted (aspect-ratio preserved) with wobble offset
+			const maxDraw = w - WOBBLE_RADIUS * 2;
+			const imgW = sourceImage!.naturalWidth;
+			const imgH = sourceImage!.naturalHeight;
+			const scale = Math.min(maxDraw / imgW, maxDraw / imgH);
+			const drawW = imgW * scale;
+			const drawH = imgH * scale;
+			const dx = (w - drawW) / 2 + ox;
+			const dy = (h - drawH) / 2 + oy;
+			target.drawImage(sourceImage!, dx, dy, drawW, drawH);
+
+			// Rainbow tint — only affects opaque pixels
+			if (rainbow) {
+				target.globalCompositeOperation = "source-atop";
+				target.fillStyle = `hsla(${hue}, 100%, 50%, ${TINT_ALPHA})`;
+				target.fillRect(0, 0, w, h);
+			}
+
+			target.restore();
+		}
+
+		function startAnimation() {
+			if (animId !== null) cancelAnimationFrame(animId);
+			let lastTime = 0;
+
+			function loop(time: number) {
+				const speed = parseInt(speedRange.value);
+				const interval = 1000 / (speed / 10); // fps derived from slider
+
+				if (time - lastTime >= interval) {
+					lastTime = time;
+					drawFrame(ctx, animFrame, FRAME_COUNT);
+					animFrame = (animFrame + 1) % FRAME_COUNT;
+				}
+				animId = requestAnimationFrame(loop);
+			}
+			animId = requestAnimationFrame(loop);
+		}
+
+		// --- GIF Export ---
+		downloadBtn.addEventListener("click", () => {
+			if (!sourceImage) return;
+			downloadBtn.disabled = true;
+			downloadBtn.textContent = "Generating\u2026";
+
+			const speed = parseInt(speedRange.value);
+			const delay = Math.round(1000 / (speed / 10)); // ms per frame
+
+			const gif = new (window as any).GIF({
+				workers: 2,
+				quality: 10,
+				width: SIZE,
+				height: SIZE,
+				workerScript: "/scripts/gif.worker.js",
+				transparent: 0x00000000,
+			});
+
+			// Render each frame to an offscreen canvas
+			const offscreen = document.createElement("canvas");
+			offscreen.width = SIZE;
+			offscreen.height = SIZE;
+			const offCtx = offscreen.getContext("2d")!;
+
+			for (let i = 0; i < FRAME_COUNT; i++) {
+				drawFrame(offCtx, i, FRAME_COUNT);
+				const imageData = offCtx.getImageData(0, 0, SIZE, SIZE);
+				gif.addFrame(imageData, { delay, copy: true });
+			}
+
+			gif.on("finished", (blob: Blob) => {
+				const url = URL.createObjectURL(blob);
+				const a = document.createElement("a");
+				a.href = url;
+				a.download = `${fileName}-party.gif`;
+				a.click();
+				URL.revokeObjectURL(url);
+				downloadBtn.disabled = false;
+				downloadBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8m0 0l-3-3m3 3l3-3M2 13h12"/></svg> Download GIF';
+			});
+
+			gif.render();
+		});
+	</script>
+
+	<style>
+		.party-tool {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			padding: 2rem 1rem;
+		}
+
+		.description {
+			max-width: 380px;
+			text-align: center;
+			color: #6b7280;
+			font-size: 0.9rem;
+			line-height: 1.5;
+			margin: 0 0 1.25rem;
+		}
+
+		.card {
+            max-width: 90vw;
+            min-width: 30vw;
+			background: #fff;
+			border: 1px solid #e5e7eb;
+			border-radius: 16px;
+			box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+			padding: 2rem;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			gap: 1.5rem;
+		}
+
+		/* --- Drop zone --- */
+		.drop-zone {
+			width: 100%;
+			padding: 2rem 1rem;
+			border: 2px dashed #d1d5db;
+			border-radius: 12px;
+			text-align: center;
+			cursor: pointer;
+			transition: border-color 0.2s, background 0.2s;
+		}
+
+		.drop-zone:hover,
+		.drop-zone.drag-over {
+			border-color: #4f8cff;
+			background: rgba(79, 140, 255, 0.04);
+		}
+
+		.drop-icon {
+			font-size: 2rem;
+			margin-bottom: 0.5rem;
+		}
+
+		.drop-zone p {
+			margin: 0;
+			color: #374151;
+			font-size: 0.95rem;
+			font-weight: 500;
+		}
+
+		.drop-hint {
+			display: block;
+			margin-top: 0.35rem;
+			color: #9ca3af;
+			font-size: 0.8rem;
+		}
+
+		.drop-zone input[type="file"] {
+			display: none;
+		}
+
+		.hidden {
+			display: none !important;
+		}
+
+		/* --- Preview area --- */
+		.preview-area {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			gap: 0.5rem;
+		}
+
+		.canvas-wrap {
+			width: 192px;
+			max-width: 90vw;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background: repeating-conic-gradient(#eee 0% 25%, #fff 0% 50%) 50% / 16px 16px;
+			overflow: hidden;
+		}
+
+		#preview {
+			display: block;
+			width: 100%;
+			height: 100%;
+			image-rendering: pixelated;
+		}
+
+		.file-name {
+			font-size: 0.8rem;
+			color: #9ca3af;
+			max-width: 200px;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+
+		.new-image-link {
+			font-size: 0.8rem;
+			color: #6b7280;
+			text-decoration: none;
+			transition: color 0.15s;
+		}
+
+		.new-image-link:hover {
+			color: #4f8cff;
+			text-decoration: underline;
+		}
+
+		/* --- Controls panel --- */
+		.controls-panel {
+			width: 100%;
+			display: flex;
+			flex-direction: column;
+			gap: 1rem;
+			border-top: 1px solid #f0f0f0;
+			padding-top: 1.25rem;
+		}
+
+		/* Toggles row */
+		.toggles {
+			display: flex;
+			justify-content: center;
+			gap: 1.25rem;
+		}
+
+		.pill-toggle {
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+			font-size: 0.85rem;
+			color: #555;
+			cursor: pointer;
+			user-select: none;
+		}
+
+		.pill-toggle input {
+			display: none;
+		}
+
+		.pill {
+			position: relative;
+			width: 36px;
+			height: 20px;
+			background: #d1d5db;
+			border-radius: 10px;
+			transition: background 0.2s;
+		}
+
+		.pill::after {
+			content: "";
+			position: absolute;
+			top: 2px;
+			left: 2px;
+			width: 16px;
+			height: 16px;
+			background: #fff;
+			border-radius: 50%;
+			transition: transform 0.2s;
+			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+		}
+
+		.pill-toggle input:checked + .pill {
+			background: #4f8cff;
+		}
+
+		.pill-toggle input:checked + .pill::after {
+			transform: translateX(16px);
+		}
+
+		/* Speed row */
+		.speed-row {
+			display: flex;
+			align-items: center;
+			gap: 0.75rem;
+		}
+
+		.speed-row label {
+			font-size: 0.85rem;
+			color: #555;
+			flex-shrink: 0;
+			transition: opacity 0.2s;
+		}
+
+		.speed-row.disabled label {
+			opacity: 0.4;
+		}
+
+		.speed-row input[type="range"] {
+			flex: 1;
+			height: 4px;
+			-webkit-appearance: none;
+			appearance: none;
+			background: #e5e7eb;
+			border-radius: 2px;
+			outline: none;
+		}
+
+		.speed-row input[type="range"]:disabled {
+			opacity: 0.4;
+			cursor: default;
+		}
+
+		.speed-row input[type="range"]:disabled + label {
+			opacity: 0.4;
+		}
+
+		.speed-row input[type="range"]::-webkit-slider-thumb {
+			-webkit-appearance: none;
+			width: 16px;
+			height: 16px;
+			background: #4f8cff;
+			border-radius: 50%;
+			cursor: pointer;
+			box-shadow: 0 1px 4px rgba(79, 140, 255, 0.3);
+		}
+
+		.speed-row input[type="range"]:disabled::-webkit-slider-thumb {
+			cursor: default;
+		}
+
+		/* Download button */
+		.download-btn {
+			width: 100%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			gap: 0.5rem;
+			padding: 0.7rem 1rem;
+			border: none;
+			border-radius: 10px;
+			background: #22c55e;
+			color: #fff;
+			font-size: 0.95rem;
+			font-weight: 600;
+			cursor: pointer;
+			transition: background 0.2s, transform 0.1s;
+		}
+
+		.download-btn:hover:not(:disabled) {
+			background: #16a34a;
+			transform: translateY(-1px);
+		}
+
+		.download-btn:active:not(:disabled) {
+			transform: translateY(0);
+		}
+
+		.download-btn:disabled {
+			background: #d1d5db;
+			cursor: default;
+		}
+
+		.download-btn svg {
+			flex-shrink: 0;
+		}
+	</style>
+</PageLayout>
