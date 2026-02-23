@@ -1,0 +1,11 @@
+---
+import PageLayout from "@layouts/PageLayout.astro";
+import RemoveBackgroundComponent from "@tools/remove-background/RemoveBackground.tsx";
+---
+
+<PageLayout
+    title="Remove Background"
+    description="Remove image backgrounds and download a transparent PNG."
+>
+    <RemoveBackgroundComponent client:load />
+</PageLayout>
