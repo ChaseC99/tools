@@ -1,0 +1,8 @@
+---
+import PageLayout from "@layouts/PageLayout.astro";
+import ImageConverterComponent from "@tools/image-converter/ImageConverter.tsx";
+---
+
+<PageLayout title="Image Converter" description="Convert images between formats entirely in your browser — no upload required.">
+	<ImageConverterComponent client:load />
+</PageLayout>

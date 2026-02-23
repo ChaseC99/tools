@@ -5,6 +5,10 @@ const tools = [
     { name: "BMI Calculator", id: "bmi" },
     { name: "Coin Flipper", id: "coin-flip" },
     { name: "Color Picker", id: "color-picker" },
+    { name: "Image Converter", id: "image-converter", href: "/image-converter", icon: "image-converter" },
+    { name: "HEIC to PNG", id: "heic-to-png", href: "/image-converter?to=png", icon: "image-converter" },
+    { name: "PNG to ICO", id: "png-to-ico", href: "/image-converter?to=ico", icon: "image-converter" },
+    { name: "SVG to PNG", id: "svg-to-png", href: "/image-converter?to=png", icon: "image-converter" },
     { name: "JSON Formatter", id: "json" },
     { name: "Party Emoji", id: "party-emoji" },
     { name: "QR Code", id: "qr-code" },
@@ -15,7 +19,7 @@ const tools = [
 ---
 
 <div>
-    {tools.map((tool) => <ToolTile name={tool.name} id={tool.id} />)}
+    {tools.map((tool) => <ToolTile name={tool.name} id={tool.id} href={tool.href} icon={tool.icon} />)}
 </div>
 
 <style>

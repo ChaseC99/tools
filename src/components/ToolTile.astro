@@ -1,11 +1,12 @@
 ---
-const { name, id } = Astro.props;
-const link = `/${id}`;
+const { name, id, href, icon } = Astro.props;
+const link = href || `/${id}`;
+const iconId = icon || id;
 ---
 
 <a class="card" href={link}>
     <h2>{name}</h2>
-    <img src={`/icons/tools/${id}.svg`} alt={`${name} icon`} />
+    <img src={`/icons/tools/${iconId}.svg`} alt={`${name} icon`} />
 </a>
 
 <style>
