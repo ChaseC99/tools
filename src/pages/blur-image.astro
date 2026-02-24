@@ -1,0 +1,11 @@
+---
+import PageLayout from "@layouts/PageLayout.astro";
+import BlurImageComponent from "@tools/blur-image/BlurImage.tsx";
+---
+
+<PageLayout
+    title="Blur Image"
+    description="Blur photos in your browser with Gaussian, box, motion, or pixelate blur effects. Apply blur to the whole image or selected regions."
+>
+    <BlurImageComponent client:load />
+</PageLayout>
