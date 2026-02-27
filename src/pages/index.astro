@@ -90,12 +90,20 @@ import ToolsList from "../components/ToolsList.astro";
 	let index = 0;
 	const el = document.getElementById("cycling-word");
 
-	setInterval(() => {
+	const CYCLE = 4000;
+	const WIGGLE_OFFSET = Math.round(0.70 * CYCLE); // 2800ms — when the wiggle starts
+
+	function changeWord() {
 		el?.classList.add("fade-out");
 		setTimeout(() => {
 			index = (index + 1) % words.length;
 			if (el) el.textContent = words[index];
 			el?.classList.remove("fade-out");
 		}, 300);
-	}, 2500);
+	}
+
+	setTimeout(() => {
+		changeWord();
+		setInterval(changeWord, CYCLE);
+	}, WIGGLE_OFFSET);
 </script>
