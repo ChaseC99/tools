@@ -1,5 +1,6 @@
 ---
 import Navbar from '@components/Navbar.astro';
+import PostHog from '@components/posthog.astro';
 
 const { title, description } = Astro.props;
 ---
@@ -11,6 +12,7 @@ const { title, description } = Astro.props;
         <meta name="generator" content={Astro.generator} />
         <title>{title}</title>
         <meta name="description" content={description} />
+        <PostHog />
     </head>
     <body>
         <Navbar title={title}/>
