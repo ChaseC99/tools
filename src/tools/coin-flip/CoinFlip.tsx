@@ -1,4 +1,15 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
+
+// Mulberry32 seeded PRNG
+function mulberry32(seed: number): () => number {
+    let s = seed;
+    return () => {
+        s = (s + 0x6D2B79F5) | 0;
+        let t = Math.imul(s ^ (s >>> 15), 1 | s);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 0x100000000;
+    };
+}
 
 type Face = "heads" | "tails";
 
@@ -13,16 +24,21 @@ export default function CoinFlip() {
     const [history, setHistory] = useState<HistoryEntry[]>([]);
     const [flipCount, setFlipCount] = useState(0);
     const [nextId, setNextId] = useState(0);
+    const rngRef = useRef(mulberry32(Math.floor(Math.random() * 0x100000000)));
 
     const flip = useCallback(() => {
         if (isFlipping) return;
         setIsFlipping(true);
 
-        const outcome: Face = Math.random() < 0.5 ? "heads" : "tails";
-        // Always 6 half-turns + 1 extra if tails (consistent spin speed)
-        const halfTurns = 6 + (outcome === "tails" ? 1 : 0);
-
-        setFlipCount((prev) => prev + halfTurns);
+        const outcome: Face = rngRef.current() < 0.5 ? "heads" : "tails";
+        // Compute half-turns so the final parity matches the outcome:
+        // even flipCount → heads face, odd flipCount → tails face
+        setFlipCount((prev) => {
+            const targetParity = outcome === "heads" ? 0 : 1;
+            const base = 6;
+            const halfTurns = (prev + base) % 2 === targetParity ? base : base + 1;
+            return prev + halfTurns;
+        });
 
         setTimeout(() => {
             setResult(outcome);
