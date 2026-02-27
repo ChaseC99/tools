@@ -1,4 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { clamp, cloneImageData, loadImage } from "@tools/shared/imageUtils";
+import ImageDropZone from "@tools/shared/ImageDropZone";
+import ErrorMessage from "@tools/shared/ErrorMessage";
+import DownloadButton from "@tools/shared/DownloadButton";
 
 type Mode = "click" | "remove-color" | "brush";
 
@@ -17,23 +21,6 @@ type BrushPreview = {
 const MAX_HISTORY = 20;
 const MAX_PREVIEW_WIDTH = 960;
 const MAX_PREVIEW_HEIGHT = 560;
-
-function clamp(value: number, min: number, max: number): number {
-    return Math.min(max, Math.max(min, value));
-}
-
-function cloneImageData(source: ImageData): ImageData {
-    return new ImageData(new Uint8ClampedArray(source.data), source.width, source.height);
-}
-
-function loadImage(src: string): Promise<HTMLImageElement> {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => resolve(img);
-        img.onerror = () => reject(new Error("Failed to load image"));
-        img.src = src;
-    });
-}
 
 function updatePreviewCanvasSize(
     canvas: HTMLCanvasElement,
@@ -231,7 +218,6 @@ function shouldIgnoreShortcutTarget(target: EventTarget | null): boolean {
 }
 
 export default function RemoveBackground() {
-    const fileInputRef = useRef<HTMLInputElement>(null);
     const displayCanvasRef = useRef<HTMLCanvasElement>(null);
     const workingCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -383,27 +369,6 @@ export default function RemoveBackground() {
         }
     }, [updateHistoryButtons]);
 
-    const handleFileChange = useCallback(
-        async (event: React.ChangeEvent<HTMLInputElement>) => {
-            const file = event.target.files?.[0];
-            if (!file) return;
-            await loadFile(file);
-            event.target.value = "";
-        },
-        [loadFile],
-    );
-
-    const handleDrop = useCallback(
-        async (event: React.DragEvent<HTMLDivElement>) => {
-            event.preventDefault();
-            setDragging(false);
-
-            const file = event.dataTransfer.files?.[0];
-            if (!file) return;
-            await loadFile(file);
-        },
-        [loadFile],
-    );
 
     const handleUndo = useCallback(() => {
         const previous = undoStackRef.current.pop();
@@ -678,64 +643,43 @@ export default function RemoveBackground() {
         return "Click and drag to erase pixels with the brush.";
     }, [mode]);
 
-    const renderUploaderSection = () => (
-        <div
-            onDragOver={(event) => {
-                event.preventDefault();
-                setDragging(true);
-            }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-            style={styles.uploadDropzone(dragging)}
-        >
-            {!hasImage ? (
-                <>
-                    <strong>Drop an image here or click to upload</strong>
-                    <p style={styles.uploadHint}>
-                        Supports PNG, JPG, WebP, and other browser-decodable image types
-                    </p>
-                </>
-            ) : (
-                <div style={styles.loadedRow}>
-                    <span style={styles.loadedRowTextWrap}>
-                        <strong style={styles.loadedFileName} title={fileLabel}>
-                            {fileLabel}
-                        </strong>
-                        <span style={styles.loadedDimensions}>
-                            • {imageMeta.width} x {imageMeta.height}
-                        </span>
-                    </span>
-                    <button
-                        type="button"
-                        onClick={(event) => {
-                            event.stopPropagation();
-                            fileInputRef.current?.click();
-                        }}
-                        style={styles.replaceImageButton}
-                    >
-                        Replace Image
-                    </button>
-                </div>
-            )}
-        </div>
-    );
-
     return (
         <div style={styles.pageContainer}>
-            {renderUploaderSection()}
-
-            <input
-                ref={fileInputRef}
-                type="file"
+            <ImageDropZone
+                onFile={loadFile}
+                dragging={dragging}
+                onDraggingChange={setDragging}
                 accept="image/*"
-                onChange={handleFileChange}
-                style={styles.hiddenInput}
-            />
+                theme="light"
+            >
+                {!hasImage ? (
+                    <>
+                        <strong>Drop an image here or click to upload</strong>
+                        <p style={styles.uploadHint}>
+                            Supports PNG, JPG, WebP, and other browser-decodable image types
+                        </p>
+                    </>
+                ) : (
+                    <div style={styles.loadedRow}>
+                        <span style={styles.loadedRowTextWrap}>
+                            <strong style={styles.loadedFileName} title={fileLabel}>
+                                {fileLabel}
+                            </strong>
+                            <span style={styles.loadedDimensions}>
+                                • {imageMeta.width} x {imageMeta.height}
+                            </span>
+                        </span>
+                        <button
+                            type="button"
+                            style={styles.replaceImageButton}
+                        >
+                            Replace Image
+                        </button>
+                    </div>
+                )}
+            </ImageDropZone>
 
-            {error && (
-                <p style={styles.errorMessage}>{error}</p>
-            )}
+            <ErrorMessage message={error} theme="light" />
 
             {hasImage && imageMeta && (
                 <>
@@ -851,13 +795,12 @@ export default function RemoveBackground() {
                             )}
                         </div>
                         <div style={styles.downloadRow}>
-                            <button
-                                type="button"
+                            <DownloadButton
                                 onClick={handleDownload}
-                                style={styles.downloadButton}
-                            >
-                                Download PNG
-                            </button>
+                                filename="image-no-bg.png"
+                                label="Download PNG"
+                                theme="light"
+                            />
                         </div>
                     </div>
                 </>
@@ -875,17 +818,6 @@ const styles = {
         flexDirection: "column",
         gap: "1rem",
     } satisfies CSSProperties,
-    hiddenInput: {
-        display: "none",
-    } satisfies CSSProperties,
-    uploadDropzone: (dragging: boolean): CSSProperties => ({
-        border: `2px dashed ${dragging ? "#4a90d9" : "#d0d7de"}`,
-        borderRadius: "10px",
-        padding: "1.25rem",
-        textAlign: "center",
-        cursor: "pointer",
-        background: dragging ? "rgba(74, 144, 217, 0.08)" : "#f8fafc",
-    }),
     uploadHint: {
         margin: "0.5rem 0 0",
         color: "#475569",
@@ -923,13 +855,6 @@ const styles = {
         color: "#0f172a",
         cursor: "pointer",
         flexShrink: 0,
-    } satisfies CSSProperties,
-    errorMessage: {
-        margin: 0,
-        color: "#b91c1c",
-        background: "#fee2e2",
-        padding: "0.5rem 0.75rem",
-        borderRadius: "8px",
     } satisfies CSSProperties,
     toolbarRow: {
         display: "flex",
@@ -1043,13 +968,5 @@ const styles = {
     downloadRow: {
         display: "flex",
         justifyContent: "center",
-    } satisfies CSSProperties,
-    downloadButton: {
-        padding: "0.55rem 0.8rem",
-        borderRadius: "8px",
-        border: "1px solid #16a34a",
-        background: "#22c55e",
-        color: "#fff",
-        cursor: "pointer",
     } satisfies CSSProperties,
 };

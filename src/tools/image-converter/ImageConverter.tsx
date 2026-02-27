@@ -1,4 +1,8 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { loadImage, canvasToBlob, decodeHeic } from "@tools/shared/imageUtils";
+import ImageDropZone from "@tools/shared/ImageDropZone";
+import Spinner from "@tools/shared/Spinner";
+import DownloadButton from "@tools/shared/DownloadButton";
 
 type Format = "heic" | "png" | "jpg" | "webp" | "svg" | "ico";
 
@@ -51,37 +55,6 @@ function detectFormat(file: File): Format | null {
 
 function isLossyOutput(to: Format): boolean {
     return to === "jpg" || to === "webp";
-}
-
-async function decodeHeic(blob: Blob): Promise<Blob> {
-    const { heicTo } = await import("heic-to");
-    return await heicTo({ blob, type: "image/png", quality: 0.92 });
-}
-
-function loadImage(src: string): Promise<HTMLImageElement> {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => resolve(img);
-        img.onerror = () => reject(new Error("Failed to load image"));
-        img.src = src;
-    });
-}
-
-function canvasToBlob(
-    canvas: HTMLCanvasElement,
-    mimeType: string,
-    quality?: number,
-): Promise<Blob> {
-    return new Promise((resolve, reject) => {
-        canvas.toBlob(
-            (blob) => {
-                if (blob) resolve(blob);
-                else reject(new Error("Canvas conversion failed"));
-            },
-            mimeType,
-            quality,
-        );
-    });
 }
 
 function buildIco(pngBlobs: { size: number; data: ArrayBuffer }[]): Blob {
@@ -149,7 +122,6 @@ export default function ImageConverter() {
     const [resultName, setResultName] = useState("");
     const [error, setError] = useState<string | null>(null);
     const [dragging, setDragging] = useState(false);
-    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Cleanup URLs on unmount or change
     useEffect(() => {
@@ -204,16 +176,6 @@ export default function ImageConverter() {
             }
         },
         [inputPreview, to],
-    );
-
-    const handleDrop = useCallback(
-        (e: React.DragEvent) => {
-            e.preventDefault();
-            setDragging(false);
-            const f = e.dataTransfer.files[0];
-            if (f) handleFile(f);
-        },
-        [handleFile],
     );
 
     const toggleIcoSize = (size: number) => {
@@ -380,25 +342,13 @@ export default function ImageConverter() {
     return (
         <div style={{ maxWidth: 600, margin: "0 auto", padding: "1rem" }}>
             {/* Drop zone */}
-            <div
-                onDragOver={(e) => {
-                    e.preventDefault();
-                    setDragging(true);
-                }}
-                onDragLeave={() => setDragging(false)}
-                onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
-                style={{
-                    border: `2px dashed ${dragging ? "#4a90d9" : "#555"}`,
-                    borderRadius: 8,
-                    padding: inputPreview ? "1rem" : "2rem",
-                    textAlign: "center",
-                    cursor: "pointer",
-                    backgroundColor: dragging
-                        ? "rgba(74, 144, 217, 0.1)"
-                        : "rgba(255, 255, 255, 0.05)",
-                    transition: "all 0.2s",
-                }}
+            <ImageDropZone
+                onFile={handleFile}
+                dragging={dragging}
+                onDraggingChange={setDragging}
+                accept="image/*,.heic,.heif"
+                theme="dark"
+                style={{ padding: inputPreview ? "1rem" : "2rem" }}
             >
                 {inputPreview && (
                     <img
@@ -422,7 +372,7 @@ export default function ImageConverter() {
                 >
                     {file
                         ? file.name
-                        : 
+                        :
                         <span>
                             Drop an image here or click to select
                             <br />
@@ -431,14 +381,7 @@ export default function ImageConverter() {
                         </span>
                     }
                 </p>
-                <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*,.heic,.heif"
-                    onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
-                    style={{ display: "none" }}
-                />
-            </div>
+            </ImageDropZone>
 
             {/* Arrow */}
             <div
@@ -647,24 +590,8 @@ export default function ImageConverter() {
                 {/* Loading spinner */}
                 {converting && (
                     <div style={{ color: "#999" }}>
-                        <div
-                            style={{
-                                display: "inline-block",
-                                width: 24,
-                                height: 24,
-                                border: "3px solid rgba(255,255,255,0.1)",
-                                borderTopColor: "#4a90d9",
-                                borderRadius: "50%",
-                                animation: "spin 0.8s linear infinite",
-                            }}
-                        />
-                        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-                        <p
-                            style={{
-                                marginTop: "0.5rem",
-                                fontSize: "0.9rem",
-                            }}
-                        >
+                        <Spinner />
+                        <p style={{ marginTop: "0.5rem", fontSize: "0.9rem" }}>
                             Converting...
                         </p>
                     </div>
@@ -682,10 +609,7 @@ export default function ImageConverter() {
                             <img
                                 src={previewSrc}
                                 alt="Converted result"
-                                style={{
-                                    maxWidth: "100%",
-                                    maxHeight: 300,
-                                }}
+                                style={{ maxWidth: "100%", maxHeight: 300 }}
                             />
                         )}
                         <p
@@ -699,32 +623,11 @@ export default function ImageConverter() {
                         >
                             {resultName}
                         </p>
-                        <a
+                        <DownloadButton
                             href={resultUrl}
-                            download={resultName}
-                            style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: "0.4rem",
-                                padding: "0.5rem 1.5rem",
-                                backgroundColor: "#4a90d9",
-                                color: "#fff",
-                                borderRadius: 6,
-                                textDecoration: "none",
-                                fontSize: "0.95rem",
-                            }}
-                        >
-                            <svg 
-                                xmlns="http://www.w3.org/2000/svg" 
-                                height="24px" 
-                                viewBox="0 -960 960 960" 
-                                width="24px" 
-                                fill="currentColor"
-                            >
-                                <path d="M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/>
-                            </svg>
-                            Download
-                        </a>
+                            filename={resultName}
+                            theme="dark"
+                        />
                     </>
                 )}
 

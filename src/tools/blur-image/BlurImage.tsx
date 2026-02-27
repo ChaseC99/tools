@@ -1,4 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { clamp, cloneImageData, loadImage, canvasToBlob, decodeHeic } from "@tools/shared/imageUtils";
+import ImageDropZone from "@tools/shared/ImageDropZone";
+import ErrorMessage from "@tools/shared/ErrorMessage";
+import DownloadButton from "@tools/shared/DownloadButton";
 
 type BlurType = "gaussian" | "box" | "motion" | "pixelate";
 type TargetMode = "whole" | "regions";
@@ -76,10 +80,6 @@ const EXPORT_MIME: Record<ExportFormat, string> = {
     webp: "image/webp",
 };
 
-function clamp(value: number, min: number, max: number): number {
-    return Math.min(max, Math.max(min, value));
-}
-
 function smoothstep(t: number): number {
     const x = clamp(t, 0, 1);
     return x * x * (3 - 2 * x);
@@ -100,20 +100,6 @@ function isLossyFormat(format: ExportFormat): boolean {
     return format === "jpg" || format === "webp";
 }
 
-async function decodeHeic(blob: Blob): Promise<Blob> {
-    const { heicTo } = await import("heic-to");
-    return await heicTo({ blob, type: "image/png", quality: 0.92 });
-}
-
-function loadImage(src: string): Promise<HTMLImageElement> {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => resolve(img);
-        img.onerror = () => reject(new Error("Failed to load image."));
-        img.src = src;
-    });
-}
-
 function imageDataToCanvas(imageData: ImageData): HTMLCanvasElement {
     const canvas = document.createElement("canvas");
     canvas.width = imageData.width;
@@ -124,23 +110,6 @@ function imageDataToCanvas(imageData: ImageData): HTMLCanvasElement {
     }
     ctx.putImageData(imageData, 0, 0);
     return canvas;
-}
-
-function cloneImageData(source: ImageData): ImageData {
-    return new ImageData(new Uint8ClampedArray(source.data), source.width, source.height);
-}
-
-function canvasToBlob(canvas: HTMLCanvasElement, mimeType: string, quality?: number): Promise<Blob> {
-    return new Promise((resolve, reject) => {
-        canvas.toBlob(
-            (blob) => {
-                if (blob) resolve(blob);
-                else reject(new Error("Could not export image."));
-            },
-            mimeType,
-            quality,
-        );
-    });
 }
 
 function buildGaussianKernel(radius: number): number[] {
@@ -577,7 +546,6 @@ function extractBaseName(fileName: string): string {
 }
 
 export default function BlurImage() {
-    const fileInputRef = useRef<HTMLInputElement>(null);
     const displayCanvasRef = useRef<HTMLCanvasElement>(null);
     const sourceCanvasRef = useRef<HTMLCanvasElement | null>(null);
     const previewOriginalDataRef = useRef<ImageData | null>(null);
@@ -787,28 +755,6 @@ export default function BlurImage() {
             setError("Could not load that image. Please try another file.");
         }
     }, []);
-
-    const handleFileChange = useCallback(
-        async (event: React.ChangeEvent<HTMLInputElement>) => {
-            const file = event.target.files?.[0];
-            if (!file) return;
-            await loadFile(file);
-            event.target.value = "";
-        },
-        [loadFile],
-    );
-
-    const handleDrop = useCallback(
-        async (event: React.DragEvent<HTMLDivElement>) => {
-            event.preventDefault();
-            setDragging(false);
-
-            const file = event.dataTransfer.files?.[0];
-            if (!file) return;
-            await loadFile(file);
-        },
-        [loadFile],
-    );
 
     const getImagePointFromEvent = useCallback(
         (clientX: number, clientY: number): { x: number; y: number } | null => {
@@ -1036,22 +982,16 @@ export default function BlurImage() {
 
     return (
         <div style={{ maxWidth: 980, margin: "0 auto", padding: "1rem", display: "grid", gap: "1rem" }}>
-            <div
-                onDragOver={(event) => {
-                    event.preventDefault();
-                    setDragging(true);
-                }}
-                onDragLeave={() => setDragging(false)}
-                onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
+            <ImageDropZone
+                onFile={loadFile}
+                dragging={dragging}
+                onDraggingChange={setDragging}
+                accept="image/jpeg,image/png,image/webp,.heic,.heif"
+                theme="dark"
                 style={{
-                    border: `2px dashed ${dragging ? "#4a90d9" : "#777"}`,
-                    borderRadius: 10,
                     padding: hasImage ? "0.75rem" : "2rem",
-                    cursor: "pointer",
-                    textAlign: "center",
                     background: dragging ? "rgba(74,144,217,0.1)" : "transparent",
-                    transition: "all 0.2s ease",
+                    border: `2px dashed ${dragging ? "#4a90d9" : "#777"}`,
                 }}
             >
                 {fileLabel ? (
@@ -1100,14 +1040,7 @@ export default function BlurImage() {
                         </span>
                     </p>
                 )}
-                <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,.heic,.heif"
-                    onChange={handleFileChange}
-                    style={{ display: "none" }}
-                />
-            </div>
+            </ImageDropZone>
 
             {warning && (
                 <div style={{ background: "#fff5d6", color: "#5f4a00", padding: "0.75rem", borderRadius: 8 }}>
@@ -1115,11 +1048,7 @@ export default function BlurImage() {
                 </div>
             )}
 
-            {error && (
-                <div style={{ background: "#ffe0e0", color: "#870000", padding: "0.75rem", borderRadius: 8 }}>
-                    {error}
-                </div>
-            )}
+            <ErrorMessage message={error} theme="light" />
 
             <div style={{ display: "grid", gap: "0.75rem", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
                 <label style={{ display: "grid", gap: 6 }}>
@@ -1255,26 +1184,22 @@ export default function BlurImage() {
                     />
                 </div>
                 <div style={{ display: "flex", justifyContent: "center", marginTop: "1rem" }}>
-                    <button
-                        type="button"
-                        disabled={!hasImage}
+                    <DownloadButton
                         onClick={handleDownload}
+                        disabled={!hasImage}
+                        filename={`image-blurred`}
+                        label="Download blurred image"
+                        theme="dark"
                         style={{
-                            border: "none",
                             borderRadius: 12,
                             padding: "0.85rem 1.8rem",
                             fontSize: "1rem",
                             fontWeight: 700,
-                            color: "#fff",
                             minWidth: 240,
-                            background: !hasImage
-                                ? "#97acc7"
-                                : "#2f80ed",
-                            cursor: !hasImage ? "not-allowed" : "pointer",
+                            background: !hasImage ? "#97acc7" : "#2f80ed",
+                            backgroundColor: !hasImage ? "#97acc7" : "#2f80ed",
                         }}
-                    >
-                        Download blurred image
-                    </button>
+                    />
                 </div>
             </div>
 
