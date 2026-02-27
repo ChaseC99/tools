@@ -1,0 +1,203 @@
+.investment-calc {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+.inputs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #555;
+}
+
+.input-wrap {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.prefix,
+.suffix {
+  padding: 0 12px;
+  font-size: 14px;
+  color: #888;
+}
+
+.input {
+  flex: 1;
+  padding: 10px 8px;
+  font-size: 16px;
+  border: none;
+  outline: none;
+  background: transparent;
+  min-width: 0;
+}
+
+.toggle-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.toggle-btn {
+  flex: 1;
+  padding: 8px 10px;
+  font-size: 13px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  color: #555;
+}
+
+.toggle-btn.is-active {
+  background: #333;
+  color: #fff;
+  border-color: #333;
+}
+
+.timing {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 16px 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+
+.card-label {
+  font-size: 12px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.card-value {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.card-value.good {
+  color: #00a199;
+}
+
+.card-value.contrib {
+  color: #16a34a;
+}
+
+.card-value.accent {
+  color: #4f8cff;
+}
+
+.chart-wrap {
+  height: 280px;
+  position: relative;
+}
+
+.table-wrap {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.th {
+  position: sticky;
+  top: 0;
+  background: #f9fafb;
+  padding: 10px 12px;
+  text-align: right;
+  font-weight: 600;
+  font-size: 12px;
+  color: #666;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.td {
+  padding: 8px 12px;
+  text-align: right;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.td-strong {
+  font-weight: 600;
+}
+
+.assumption-note {
+  margin: 0;
+  font-size: 13px;
+  color: #666;
+}
+
+.empty-note {
+  margin: 0;
+  padding: 12px;
+  border: 1px dashed #d1d5db;
+  border-radius: 8px;
+  color: #666;
+  font-size: 14px;
+  min-height: 280px;
+}
+
+@media (max-width: 768px) {
+  .inputs {
+    grid-template-columns: 1fr;
+  }
+
+  .cards {
+    grid-template-columns: 1fr;
+  }
+
+  .toggle-row {
+    flex-direction: column;
+  }
+
+  .card {
+    align-items: flex-start;
+  }
+
+  .table {
+    font-size: 13px;
+  }
+
+  .th,
+  .td {
+    padding: 8px;
+  }
+}

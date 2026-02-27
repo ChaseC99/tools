@@ -1,0 +1,8 @@
+---
+import PageLayout from "@layouts/PageLayout.astro";
+import InvestmentCalcComponent from "@tools/investment-calc/InvestmentCalc.tsx";
+---
+
+<PageLayout title="Investment Calculator" description="Calculate how your investments grow over time with compound interest and regular contributions.">
+  <InvestmentCalcComponent client:visible />
+</PageLayout>
