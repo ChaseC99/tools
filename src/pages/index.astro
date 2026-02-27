@@ -1,7 +1,101 @@
 ---
 import PageLayout from "../layouts/PageLayout.astro";
+import ToolsList from "../components/ToolsList.astro";
 ---
 
 <PageLayout title="Tools" description="A collection of free browser-based tools — no sign-up, no tracking, just useful utilities.">
-	<p>A collection of free tools that are hopefully helpful :)</p>
+	<section class="hero">
+		<div class="hero-title">
+			<h1>Tools</h1>
+			<img src="/icons/tool.svg" alt="Tools" class="hero-icon" />
+		</div>
+		<p class="hero-subtitle">A collection of <span id="cycling-word">simple</span> tools.</p>
+	</section>
+	<ToolsList />
+	<footer>
+		<p>
+			Created by <a href="https://carnaroli.software" target="_blank" rel="noopener">Carnaroli Software LLC</a>
+		</p>
+	</footer>
 </PageLayout>
+
+<style>
+	.hero {
+		text-align: center;
+		padding: 6rem 1rem 3rem;
+	}
+
+	.hero-title {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 1.25rem;
+		margin-bottom: 1rem;
+	}
+
+	.hero-icon {
+		width: 6rem;
+		height: 6rem;
+		animation: wiggle 4s ease-in-out infinite;
+		transform-origin: bottom center;
+	}
+
+	@keyframes wiggle {
+		0%, 70%, 100% { transform: rotate(0deg); }
+		75% { transform: rotate(-18deg); }
+		80% { transform: rotate(16deg); }
+		85% { transform: rotate(-12deg); }
+		90% { transform: rotate(8deg); }
+		95% { transform: rotate(-4deg); }
+	}
+
+	.hero h1 {
+		font-size: 6rem;
+		font-weight: 800;
+		margin: 0;
+		line-height: 1;
+	}
+
+	.hero-subtitle {
+		color: #666;
+		font-size: 1.4rem;
+		margin: 2rem 0;
+	}
+
+	#cycling-word {
+		display: inline-block;
+		transition: opacity 0.3s ease, transform 0.3s ease;
+	}
+
+	#cycling-word.fade-out {
+		opacity: 0;
+		transform: translateY(-6px);
+	}
+
+	#cycling-word.fade-in {
+		opacity: 1;
+		transform: translateY(0);
+	}
+
+	footer {
+		text-align: center;
+		padding: 2rem 1rem;
+		color: #666;
+		font-size: 0.9rem;
+	}
+</style>
+
+<script>
+	const words = ["simple", "helpful", "functional", "free", "great", "handy", "fast", "neat"];
+	let index = 0;
+	const el = document.getElementById("cycling-word");
+
+	setInterval(() => {
+		el?.classList.add("fade-out");
+		setTimeout(() => {
+			index = (index + 1) % words.length;
+			if (el) el.textContent = words[index];
+			el?.classList.remove("fade-out");
+		}, 300);
+	}, 2500);
+</script>
