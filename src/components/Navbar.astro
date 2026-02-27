@@ -5,33 +5,39 @@ const { title } = Astro.props;
 
 <nav class="navbar">
     <div class="navbar-items">
-        <h1>{title}</h1>
+        <div class="navbar-title-wrapper">
+            <h1 class="navbar-page-title">{title}</h1>
+            <a href="/" class="navbar-tools-link" tabindex="-1">Tools</a>
+        </div>
         <div class="navbar-tools-side">
-            <input 
-                type="search" 
-                placeholder="Search tools" 
+            <input
+                type="search"
+                placeholder="Search tools"
                 aria-label="Search tools"
                 id="search"
                 autocomplete="off"
             />
-            <img 
+            <img
                 id='tools-dropdown'
-                src='/icons/tool.svg' 
-                alt='Tools dropdown icon' 
+                src='/icons/tool.svg'
+                alt='Tools dropdown icon'
                 height=30
                 role="button"
                 tabindex="0"
             />
         </div>
     </div>
-    <div id="tools">
-        <ToolsList />
-    </div>
 </nav>
+<div id="tools">
+    <ToolsList />
+</div>
 
 <style>
-    h1 {
-        margin: 0;
+    .navbar {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: white;
     }
 
     .navbar-items {
@@ -39,6 +45,42 @@ const { title } = Astro.props;
         justify-content: space-between;
         align-items: center;
         padding: 1rem;
+    }
+
+    .navbar-title-wrapper {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .navbar-page-title {
+        margin: 0;
+        transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
+    }
+
+    .navbar-page-title.slide-out {
+        transform: translateX(-120%);
+        opacity: 0;
+    }
+
+    .navbar-tools-link {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        font-size: 2em;
+        font-weight: bold;
+        text-decoration: none;
+        color: inherit;
+        transform: translateY(-100%);
+        opacity: 0;
+        pointer-events: none;
+        transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
+    }
+
+    .navbar-tools-link.drop-in {
+        transform: translateY(0);
+        opacity: 1;
+        pointer-events: auto;
     }
 
     .navbar-tools-side {
@@ -64,7 +106,7 @@ const { title } = Astro.props;
         width: 200px;
 
         /* Hide search bar until functionality is ready */
-        visibility: hidden; 
+        visibility: hidden;
 
         border-radius: 8px;
         border-left: 1px solid #ccc;
@@ -80,44 +122,61 @@ const { title } = Astro.props;
     }
 
     #tools-dropdown.expanded {
-        transform: rotate(-90deg);   
+        transform: rotate(-90deg);
     }
 
     #tools {
-        position: absolute;
-        left: 0;
-        top: 75px;
-        width: 100%;
-        background-color: white;
-        z-index: 1;
+        position: fixed;
+        inset: 0;
+        background: white;
+        z-index: 50;
+        overflow-y: auto;
+        padding-top: 75px;
+        box-sizing: border-box;
 
-        max-height: 0;
+        opacity: 0;
         visibility: hidden;
-        overflow: hidden;
-        transition: max-height 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        transform: translateY(-12px);
+        transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out, visibility 0s 0.3s;
     }
 
-    #tools.show {   
-        display: block;
+    #tools.show {
+        opacity: 1;
         visibility: visible;
-        max-height: 100vh;
-        transition:  max-height 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        transform: translateY(0);
+        transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out, visibility 0s;
     }
 </style>
 
 <script>
     const dropdown = document.getElementById('tools-dropdown');
+
     const toggleDropdown = () => {
-        document.getElementById('tools').classList.toggle('show');
-        document.getElementById('search').classList.toggle('show');
+        const isOpen = document.getElementById('tools').classList.toggle('show');
         document.getElementById('tools-dropdown').classList.toggle('expanded');
+        document.getElementById('search').classList.toggle('show');
+
+        const pageTitle = document.querySelector('.navbar-page-title');
+        const toolsLink = document.querySelector('.navbar-tools-link') as HTMLElement;
+        const isHome = window.location.pathname === '/';
+
+        if (isOpen) {
+            if (!isHome) {
+                pageTitle.classList.add('slide-out');
+                toolsLink.classList.add('drop-in');
+                toolsLink.tabIndex = 0;
+            }
+            document.body.style.overflow = 'hidden';
+        } else {
+            pageTitle.classList.remove('slide-out');
+            toolsLink.classList.remove('drop-in');
+            toolsLink.tabIndex = -1;
+            document.body.style.overflow = '';
+        }
     };
 
     dropdown.addEventListener('click', toggleDropdown);
-
     dropdown.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') {
-            toggleDropdown();
-        }
+        if (event.key === 'Enter') { toggleDropdown(); }
     });
 </script>
