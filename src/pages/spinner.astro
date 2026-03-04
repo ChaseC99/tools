@@ -1,0 +1,8 @@
+---
+import PageLayout from "@layouts/PageLayout.astro";
+import SpinnerComponent from "@tools/spinner/Spinner.tsx";
+---
+
+<PageLayout title="Random Spinner" description="Enter options, spin the wheel, and randomly pick a winner in your browser.">
+    <SpinnerComponent client:load />
+</PageLayout>
