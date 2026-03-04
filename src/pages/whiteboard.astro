@@ -1,0 +1,664 @@
+---
+import PageLayout from "@layouts/PageLayout.astro";
+---
+
+<PageLayout title="Whiteboard" description="A simple whiteboard for freehand drawing with pen, eraser, and customizable backgrounds.">
+    <div class="whiteboard-page">
+        <div id="whiteboard-board" class="board board-pattern-none" style="--board-bg:#ffffff;">
+            <canvas id="whiteboard-canvas" aria-label="Drawing canvas"></canvas>
+            <div id="cursor-preview" class="cursor-preview is-hidden" aria-hidden="true"></div>
+        </div>
+
+        <div class="toolbar" role="toolbar" aria-label="Whiteboard tools">
+            <div class="toolbar-row">
+                <button id="tool-pen" type="button" class="tool-button is-active">Pen</button>
+                <button id="tool-erase" type="button" class="tool-button">Erase</button>
+                <button id="tool-background" type="button" class="tool-button">Background</button>
+                <button id="tool-save" type="button" class="save-button">Save</button>
+                <button id="tool-reset" type="button" class="reset-button">Reset</button>
+            </div>
+
+            <div id="panel-pen" class="panel">
+                <label class="label" for="pen-size">
+                    <span>Size</span>
+                    <input id="pen-size" type="range" min="1" max="40" value="4" />
+                    <span id="pen-size-value" class="value">4px</span>
+                </label>
+                <div class="color-row" aria-label="Pen colors">
+                    <button type="button" class="color-swatch is-selected" style="--swatch:#111827" data-color="#111827" aria-label="Set pen color #111827"></button>
+                    <button type="button" class="color-swatch" style="--swatch:#ef4444" data-color="#ef4444" aria-label="Set pen color #ef4444"></button>
+                    <button type="button" class="color-swatch" style="--swatch:#3b82f6" data-color="#3b82f6" aria-label="Set pen color #3b82f6"></button>
+                    <button type="button" class="color-swatch" style="--swatch:#22c55e" data-color="#22c55e" aria-label="Set pen color #22c55e"></button>
+                    <button type="button" class="color-swatch" style="--swatch:#f59e0b" data-color="#f59e0b" aria-label="Set pen color #f59e0b"></button>
+                    <button type="button" class="color-swatch" style="--swatch:#a855f7" data-color="#a855f7" aria-label="Set pen color #a855f7"></button>
+                    <input id="pen-color" type="color" value="#111827" aria-label="Custom pen color" />
+                </div>
+            </div>
+
+            <div id="panel-erase" class="panel is-hidden" aria-hidden="true">
+                <label class="label" for="erase-size">
+                    <span>Size</span>
+                    <input id="erase-size" type="range" min="4" max="80" value="20" />
+                    <span id="erase-size-value" class="value">20px</span>
+                </label>
+            </div>
+
+            <div id="panel-background" class="panel is-hidden" aria-hidden="true">
+                <label class="label" for="background-color">
+                    <span>Color</span>
+                    <input id="background-color" type="color" value="#ffffff" />
+                </label>
+                <label class="label" for="background-pattern">
+                    <span>Pattern</span>
+                    <select id="background-pattern">
+                        <option value="none">None</option>
+                        <option value="dots">Dots</option>
+                        <option value="lines">Lines</option>
+                        <option value="grid">Grid</option>
+                    </select>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const board = document.getElementById("whiteboard-board") as HTMLDivElement | null;
+        const canvas = document.getElementById("whiteboard-canvas") as HTMLCanvasElement | null;
+        const penButton = document.getElementById("tool-pen") as HTMLButtonElement | null;
+        const eraseButton = document.getElementById("tool-erase") as HTMLButtonElement | null;
+        const backgroundButton = document.getElementById("tool-background") as HTMLButtonElement | null;
+        const saveButton = document.getElementById("tool-save") as HTMLButtonElement | null;
+        const resetButton = document.getElementById("tool-reset") as HTMLButtonElement | null;
+
+        const penPanel = document.getElementById("panel-pen") as HTMLDivElement | null;
+        const erasePanel = document.getElementById("panel-erase") as HTMLDivElement | null;
+        const backgroundPanel = document.getElementById("panel-background") as HTMLDivElement | null;
+
+        const penSizeInput = document.getElementById("pen-size") as HTMLInputElement | null;
+        const penSizeValue = document.getElementById("pen-size-value") as HTMLSpanElement | null;
+        const eraseSizeInput = document.getElementById("erase-size") as HTMLInputElement | null;
+        const eraseSizeValue = document.getElementById("erase-size-value") as HTMLSpanElement | null;
+        const penColorInput = document.getElementById("pen-color") as HTMLInputElement | null;
+        const backgroundColorInput = document.getElementById("background-color") as HTMLInputElement | null;
+        const backgroundPatternInput = document.getElementById("background-pattern") as HTMLSelectElement | null;
+        const cursorPreview = document.getElementById("cursor-preview") as HTMLDivElement | null;
+
+        if (
+            !board || !canvas || !penButton || !eraseButton || !backgroundButton || !saveButton || !resetButton ||
+            !penPanel || !erasePanel || !backgroundPanel || !penSizeInput || !penSizeValue ||
+            !eraseSizeInput || !eraseSizeValue || !penColorInput || !backgroundColorInput || !backgroundPatternInput ||
+            !cursorPreview
+        ) {
+            throw new Error("Whiteboard failed to initialize: missing required elements.");
+        }
+
+        const state = {
+            tool: "pen",
+            panel: "pen",
+            penColor: "#111827",
+            penSize: 4,
+            eraseSize: 20,
+            isDrawing: false,
+            pointerId: null,
+            lastX: 0,
+            lastY: 0,
+        };
+
+        const patternClasses = ["board-pattern-none", "board-pattern-dots", "board-pattern-lines", "board-pattern-grid"];
+
+        function getBrushSize() {
+            return state.tool === "erase" ? state.eraseSize : state.penSize;
+        }
+
+        function hideCursorPreview() {
+            cursorPreview.classList.add("is-hidden");
+        }
+
+        function updateCursorPreview(event) {
+            if (event.pointerType === "touch") {
+                hideCursorPreview();
+                return;
+            }
+
+            const size = getBrushSize();
+            cursorPreview.style.width = `${size}px`;
+            cursorPreview.style.height = `${size}px`;
+            cursorPreview.style.transform = `translate(${event.clientX - (size / 2)}px, ${event.clientY - (size / 2)}px)`;
+            cursorPreview.classList.toggle("erase", state.tool === "erase");
+            cursorPreview.classList.remove("is-hidden");
+        }
+
+        function setActivePanel(name) {
+            state.panel = name;
+            const panelMap = {
+                pen: penPanel,
+                erase: erasePanel,
+                background: backgroundPanel,
+            };
+
+            Object.entries(panelMap).forEach(([key, panel]) => {
+                const active = key === name;
+                panel.classList.toggle("is-hidden", !active);
+                panel.setAttribute("aria-hidden", String(!active));
+            });
+
+            backgroundButton.classList.toggle("is-active", name === "background");
+        }
+
+        function setTool(name) {
+            state.tool = name;
+            penButton.classList.toggle("is-active", name === "pen");
+            eraseButton.classList.toggle("is-active", name === "erase");
+            cursorPreview.classList.toggle("erase", name === "erase");
+            if (name === "pen" || name === "erase") {
+                setActivePanel(name);
+            }
+        }
+
+        function applyBackground() {
+            const pattern = backgroundPatternInput.value;
+            board.style.setProperty("--board-bg", backgroundColorInput.value);
+            board.classList.remove(...patternClasses);
+            board.classList.add(`board-pattern-${pattern}`);
+        }
+
+        function getPoint(event) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: event.clientX - rect.left,
+                y: event.clientY - rect.top,
+            };
+        }
+
+        function getContext() {
+            return canvas.getContext("2d");
+        }
+
+        function applyStrokeStyle(ctx) {
+            ctx.lineJoin = "round";
+            ctx.lineCap = "round";
+            if (state.tool === "erase") {
+                ctx.globalCompositeOperation = "destination-out";
+                ctx.lineWidth = state.eraseSize;
+                ctx.strokeStyle = "rgba(0,0,0,1)";
+                ctx.fillStyle = "rgba(0,0,0,1)";
+                return;
+            }
+
+            ctx.globalCompositeOperation = "source-over";
+            ctx.lineWidth = state.penSize;
+            ctx.strokeStyle = state.penColor;
+            ctx.fillStyle = state.penColor;
+        }
+
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            const width = Math.max(1, Math.round(rect.width * dpr));
+            const height = Math.max(1, Math.round(rect.height * dpr));
+
+            if (canvas.width === width && canvas.height === height) {
+                return;
+            }
+
+            const snapshot = document.createElement("canvas");
+            snapshot.width = canvas.width;
+            snapshot.height = canvas.height;
+            const snapshotCtx = snapshot.getContext("2d");
+            if (snapshotCtx) {
+                snapshotCtx.drawImage(canvas, 0, 0);
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+
+            const ctx = getContext();
+            if (!ctx) return;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.lineJoin = "round";
+            ctx.lineCap = "round";
+
+            if (snapshot.width > 0 && snapshot.height > 0) {
+                ctx.drawImage(snapshot, 0, 0, width, height);
+            }
+        }
+
+        function drawDot(ctx, x, y) {
+            applyStrokeStyle(ctx);
+            const radius = (state.tool === "erase" ? state.eraseSize : state.penSize) / 2;
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawLine(ctx, x1, y1, x2, y2) {
+            applyStrokeStyle(ctx);
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+        }
+
+        function startDrawing(event) {
+            if (event.button !== 0) return;
+            event.preventDefault();
+            updateCursorPreview(event);
+            const point = getPoint(event);
+            const ctx = getContext();
+            if (!ctx) return;
+
+            state.isDrawing = true;
+            state.pointerId = event.pointerId;
+            state.lastX = point.x;
+            state.lastY = point.y;
+
+            try {
+                canvas.setPointerCapture(event.pointerId);
+            } catch {
+                // Some pointers may not support capture.
+            }
+
+            drawDot(ctx, point.x, point.y);
+        }
+
+        function moveDrawing(event) {
+            updateCursorPreview(event);
+            if (!state.isDrawing || state.pointerId !== event.pointerId) return;
+            event.preventDefault();
+
+            const point = getPoint(event);
+            const ctx = getContext();
+            if (!ctx) return;
+
+            drawLine(ctx, state.lastX, state.lastY, point.x, point.y);
+            state.lastX = point.x;
+            state.lastY = point.y;
+        }
+
+        function stopDrawing(event) {
+            if (state.pointerId !== event.pointerId) return;
+            if (canvas.hasPointerCapture(event.pointerId)) {
+                canvas.releasePointerCapture(event.pointerId);
+            }
+            state.isDrawing = false;
+            state.pointerId = null;
+            updateCursorPreview(event);
+        }
+
+        function clearBoard() {
+            const ctx = getContext();
+            if (!ctx) return;
+            ctx.save();
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.restore();
+        }
+
+        function drawExportPattern(ctx, width, height, pattern, scaleX, scaleY) {
+            if (pattern === "none") {
+                return;
+            }
+
+            if (pattern === "dots") {
+                const gapX = 24 * scaleX;
+                const gapY = 24 * scaleY;
+                const radius = Math.max(1, Math.min(scaleX, scaleY));
+                ctx.fillStyle = "rgba(0,0,0,0.18)";
+
+                for (let y = scaleY; y < height; y += gapY) {
+                    for (let x = scaleX; x < width; x += gapX) {
+                        ctx.beginPath();
+                        ctx.arc(x, y, radius, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+                return;
+            }
+
+            if (pattern === "lines") {
+                const gapY = 24 * scaleY;
+                const lineY = Math.max(1, scaleY);
+                ctx.strokeStyle = "rgba(0,0,0,0.14)";
+                ctx.lineWidth = lineY;
+                for (let y = gapY; y < height; y += gapY) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(width, y);
+                    ctx.stroke();
+                }
+                return;
+            }
+
+            if (pattern === "grid") {
+                const gapX = 24 * scaleX;
+                const gapY = 24 * scaleY;
+                const line = Math.max(1, Math.min(scaleX, scaleY));
+                ctx.strokeStyle = "rgba(0,0,0,0.10)";
+                ctx.lineWidth = line;
+
+                for (let y = gapY; y < height; y += gapY) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(width, y);
+                    ctx.stroke();
+                }
+
+                for (let x = gapX; x < width; x += gapX) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, height);
+                    ctx.stroke();
+                }
+            }
+        }
+
+        function saveWhiteboard() {
+            const exportCanvas = document.createElement("canvas");
+            exportCanvas.width = canvas.width;
+            exportCanvas.height = canvas.height;
+
+            const exportCtx = exportCanvas.getContext("2d");
+            if (!exportCtx) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / Math.max(1, rect.width);
+            const scaleY = canvas.height / Math.max(1, rect.height);
+            const bgColor = backgroundColorInput.value;
+            const bgPattern = backgroundPatternInput.value;
+
+            exportCtx.fillStyle = bgColor;
+            exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+            drawExportPattern(exportCtx, exportCanvas.width, exportCanvas.height, bgPattern, scaleX, scaleY);
+            exportCtx.drawImage(canvas, 0, 0);
+
+            const datePart = new Date().toISOString().replace(/[:.]/g, "-");
+            const filename = `whiteboard-${datePart}.png`;
+
+            exportCanvas.toBlob((blob) => {
+                if (!blob) return;
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = filename;
+                link.click();
+                URL.revokeObjectURL(url);
+            }, "image/png");
+        }
+
+        function updateColorSelection(color) {
+            document.querySelectorAll<HTMLButtonElement>(".color-swatch").forEach((button) => {
+                button.classList.toggle("is-selected", button.dataset.color === color);
+            });
+        }
+
+        penButton.addEventListener("click", () => setTool("pen"));
+        eraseButton.addEventListener("click", () => setTool("erase"));
+        backgroundButton.addEventListener("click", () => setActivePanel("background"));
+        saveButton.addEventListener("click", saveWhiteboard);
+        resetButton.addEventListener("click", clearBoard);
+
+        penSizeInput.addEventListener("input", () => {
+            state.penSize = Number(penSizeInput.value);
+            penSizeValue.textContent = `${state.penSize}px`;
+            if (!cursorPreview.classList.contains("is-hidden")) {
+                const width = Number.parseFloat(cursorPreview.style.width) || state.penSize;
+                const left = Number.parseFloat((cursorPreview.style.transform.match(/translate\(([-\d.]+)px, ([-\d.]+)px\)/) || [])[1]);
+                const top = Number.parseFloat((cursorPreview.style.transform.match(/translate\(([-\d.]+)px, ([-\d.]+)px\)/) || [])[2]);
+                if (!Number.isNaN(left) && !Number.isNaN(top)) {
+                    const centerX = left + (width / 2);
+                    const centerY = top + (width / 2);
+                    const size = getBrushSize();
+                    cursorPreview.style.width = `${size}px`;
+                    cursorPreview.style.height = `${size}px`;
+                    cursorPreview.style.transform = `translate(${centerX - (size / 2)}px, ${centerY - (size / 2)}px)`;
+                }
+            }
+        });
+
+        eraseSizeInput.addEventListener("input", () => {
+            state.eraseSize = Number(eraseSizeInput.value);
+            eraseSizeValue.textContent = `${state.eraseSize}px`;
+            if (state.tool === "erase" && !cursorPreview.classList.contains("is-hidden")) {
+                const width = Number.parseFloat(cursorPreview.style.width) || state.eraseSize;
+                const left = Number.parseFloat((cursorPreview.style.transform.match(/translate\(([-\d.]+)px, ([-\d.]+)px\)/) || [])[1]);
+                const top = Number.parseFloat((cursorPreview.style.transform.match(/translate\(([-\d.]+)px, ([-\d.]+)px\)/) || [])[2]);
+                if (!Number.isNaN(left) && !Number.isNaN(top)) {
+                    const centerX = left + (width / 2);
+                    const centerY = top + (width / 2);
+                    const size = getBrushSize();
+                    cursorPreview.style.width = `${size}px`;
+                    cursorPreview.style.height = `${size}px`;
+                    cursorPreview.style.transform = `translate(${centerX - (size / 2)}px, ${centerY - (size / 2)}px)`;
+                }
+            }
+        });
+
+        penColorInput.addEventListener("input", () => {
+            state.penColor = penColorInput.value;
+            updateColorSelection(state.penColor.toLowerCase());
+        });
+
+        document.querySelectorAll<HTMLButtonElement>(".color-swatch").forEach((button) => {
+            button.addEventListener("click", () => {
+                const color = button.dataset.color;
+                if (!color) return;
+                state.penColor = color;
+                penColorInput.value = color;
+                updateColorSelection(color.toLowerCase());
+            });
+        });
+
+        backgroundColorInput.addEventListener("input", applyBackground);
+        backgroundPatternInput.addEventListener("change", applyBackground);
+
+        canvas.addEventListener("pointerdown", startDrawing);
+        canvas.addEventListener("pointermove", moveDrawing);
+        canvas.addEventListener("pointerup", stopDrawing);
+        canvas.addEventListener("pointercancel", stopDrawing);
+        canvas.addEventListener("pointerenter", updateCursorPreview);
+        canvas.addEventListener("pointerleave", hideCursorPreview);
+
+        window.addEventListener("resize", resizeCanvas);
+
+        applyBackground();
+        resizeCanvas();
+    </script>
+</PageLayout>
+
+<style>
+    .whiteboard-page {
+        min-height: calc(100vh - 80px);
+        position: relative;
+    }
+
+    .board {
+        width: 100%;
+        height: calc(100vh - 80px);
+        position: relative;
+        overflow: hidden;
+        background-color: var(--board-bg);
+    }
+
+    .board-pattern-none {
+        background-image: none;
+    }
+
+    .board-pattern-dots {
+        background-image: radial-gradient(circle at 1px 1px, rgba(0, 0, 0, 0.18) 1px, transparent 1px);
+        background-size: 24px 24px;
+    }
+
+    .board-pattern-lines {
+        background-image: repeating-linear-gradient(0deg, transparent, transparent 23px, rgba(0, 0, 0, 0.14) 24px);
+        background-size: 24px 24px;
+    }
+
+    .board-pattern-grid {
+        background-image: linear-gradient(rgba(0, 0, 0, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 0, 0, 0.1) 1px, transparent 1px);
+        background-size: 24px 24px;
+    }
+
+    #whiteboard-canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+        touch-action: none;
+        cursor: none;
+        position: relative;
+        z-index: 1;
+    }
+
+    .cursor-preview {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 4px;
+        height: 4px;
+        border-radius: 999px;
+        border: 1.5px solid rgba(17, 24, 39, 0.9);
+        background: rgba(255, 255, 255, 0.06);
+        pointer-events: none;
+        z-index: 130;
+        transform: translate(-9999px, -9999px);
+        transition: width 0.08s linear, height 0.08s linear;
+        box-sizing: border-box;
+    }
+
+    .cursor-preview.erase {
+        border-style: dashed;
+        border-color: rgba(185, 28, 28, 0.9);
+    }
+
+    .cursor-preview.is-hidden {
+        display: none;
+    }
+
+    .toolbar {
+        position: fixed;
+        left: 16px;
+        bottom: 16px;
+        max-width: min(94vw, 420px);
+        z-index: 120;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.95);
+        box-shadow: 0 8px 30px rgba(15, 23, 42, 0.15);
+    }
+
+    .toolbar-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .tool-button,
+    .save-button,
+    .reset-button,
+    .color-swatch,
+    #pen-color,
+    #background-color,
+    select,
+    input[type="range"] {
+        cursor: pointer;
+    }
+
+    .tool-button {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        background: #fff;
+        padding: 8px 10px;
+        font-size: 14px;
+    }
+
+    .tool-button.is-active {
+        border-color: #2563eb;
+        background: #eff6ff;
+        color: #1d4ed8;
+    }
+
+    .reset-button {
+        border: 1px solid #fecaca;
+        border-radius: 8px;
+        background: #fef2f2;
+        color: #b91c1c;
+        padding: 8px 10px;
+        font-size: 14px;
+    }
+
+    .save-button {
+        border: 1px solid #86efac;
+        border-radius: 8px;
+        background: #f0fdf4;
+        color: #166534;
+        padding: 8px 10px;
+        font-size: 14px;
+    }
+
+    .panel {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .panel.is-hidden {
+        display: none;
+    }
+
+    .label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+    }
+
+    .label input[type="range"] {
+        width: 100%;
+        max-width: 220px;
+    }
+
+    .value {
+        min-width: 50px;
+        font-family: monospace;
+    }
+
+    .color-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .color-swatch {
+        width: 24px;
+        height: 24px;
+        border-radius: 999px;
+        border: 1px solid #cbd5e1;
+        background: var(--swatch);
+        padding: 0;
+    }
+
+    .color-swatch.is-selected {
+        outline: 2px solid #111827;
+    }
+
+    #pen-color,
+    #background-color {
+        width: 36px;
+        height: 30px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        padding: 2px;
+        background: #fff;
+    }
+
+    select {
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        padding: 6px 8px;
+        background: #fff;
+    }
+</style>
