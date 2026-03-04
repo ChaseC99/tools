@@ -1,0 +1,8 @@
+---
+import PageLayout from "@layouts/PageLayout.astro";
+import CaseConverterComponent from "@tools/case-converter/CaseConverter.tsx";
+---
+
+<PageLayout title="Case Converter" description="Convert text to uppercase or lowercase.">
+	<CaseConverterComponent client:load />
+</PageLayout>
