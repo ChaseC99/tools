@@ -1,0 +1,33 @@
+---
+const formUrl = "https://docs.google.com/forms/d/e/1FAIpQLScjTq00FbKh9X8A3bUNDObIHR23aUaTOB22ssB85ORX_ivabQ/viewform?usp=publish-editor";
+---
+
+<div class="feedback-actions">
+    <a href={formUrl} target="_blank" rel="noopener" class="feedback-btn">Request New Tool</a>
+    <a href={formUrl} target="_blank" rel="noopener" class="feedback-btn">Leave Feedback</a>
+</div>
+
+<style>
+    .feedback-actions {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        padding: 1.5rem 1rem;
+    }
+
+    .feedback-btn {
+        padding: 0.6rem 1.4rem;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        background: white;
+        color: #333;
+        text-decoration: none;
+        font-size: 0.95rem;
+        transition: background 0.2s, border-color 0.2s;
+    }
+
+    .feedback-btn:hover {
+        background: #f5f5f5;
+        border-color: #999;
+    }
+</style>
