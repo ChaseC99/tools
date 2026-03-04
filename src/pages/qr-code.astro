@@ -1,8 +1,8 @@
 ---
 import PageLayout from "@layouts/PageLayout.astro";
-import QRCodeComponent from "@tools/qr-code/QRCodeComponent.svelte";
+import QRCode from "@tools/qr-code/QRCode";
 ---
 
-<PageLayout title="QR Code Generator" description="Generate QR codes from any text or URL with adjustable size and error correction, and download as PNG.">
-	<QRCodeComponent client:load />
+<PageLayout title="QR Code Generator" description="Generate customizable QR codes with colors, shapes, and logo overlays. Download as PNG, SVG, or JPEG.">
+	<QRCode client:load />
 </PageLayout>
