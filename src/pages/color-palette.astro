@@ -1,0 +1,8 @@
+---
+import PageLayout from "@layouts/PageLayout.astro";
+import ColorPaletteComponent from "@tools/color-palette/ColorPalette.tsx";
+---
+
+<PageLayout title="Color Palette" description="Extract a color palette from any image entirely in your browser.">
+    <ColorPaletteComponent client:load />
+</PageLayout>
