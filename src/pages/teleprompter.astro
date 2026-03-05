@@ -1,0 +1,8 @@
+---
+import PageLayout from "@layouts/PageLayout.astro";
+import TeleprompterComponent from "@tools/teleprompter/Teleprompter.tsx";
+---
+
+<PageLayout title="Teleprompter" description="Paste text and scroll it like a teleprompter with adjustable speed and font size.">
+	<TeleprompterComponent client:load />
+</PageLayout>
