@@ -1,0 +1,8 @@
+---
+import PageLayout from "@layouts/PageLayout.astro";
+import TextCounterComponent from "@tools/text-counter/TextCounter.tsx";
+---
+
+<PageLayout title="Text Counter" description="Count words, characters, and lines in your text.">
+	<TextCounterComponent client:load />
+</PageLayout>
