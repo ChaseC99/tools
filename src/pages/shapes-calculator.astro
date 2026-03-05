@@ -1,0 +1,8 @@
+---
+import PageLayout from "@layouts/PageLayout.astro";
+import ShapesCalculatorComponent from "@tools/shapes-calculator/ShapesCalculator.tsx";
+---
+
+<PageLayout title="Shapes Calculator" description="Calculate area for common 2D shapes with dynamic inputs and step-by-step formulas.">
+  <ShapesCalculatorComponent client:load />
+</PageLayout>

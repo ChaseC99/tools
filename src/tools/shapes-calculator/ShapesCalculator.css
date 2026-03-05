@@ -1,0 +1,207 @@
+.shapes-calc {
+  --shape-bg-soft: #f8fafc;
+  --shape-border: #d6dde7;
+  --shape-border-strong: #b8c4d5;
+  --shape-text-muted: #5f6c80;
+  --shape-accent: #0f5fd6;
+  --shape-accent-soft: #e8f0ff;
+  --shape-danger: #b91c1c;
+
+  max-width: 760px;
+  margin: 20px auto;
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.shapes-calc__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+}
+
+.shapes-calc__field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.shapes-calc__label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #2b3444;
+  letter-spacing: 0.02em;
+}
+
+.shapes-calc__input,
+.shapes-calc__select {
+  width: 100%;
+  border: 1px solid var(--shape-border);
+  border-radius: 10px;
+  padding: 11px 12px;
+  font-size: 16px;
+  color: #1f2937;
+  background: #fff;
+  box-sizing: border-box;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+.shapes-calc__input::placeholder {
+  color: #9aa7bb;
+}
+
+.shapes-calc__input:hover,
+.shapes-calc__select:hover {
+  border-color: var(--shape-border-strong);
+}
+
+.shapes-calc__input:focus,
+.shapes-calc__select:focus {
+  outline: none;
+  border-color: var(--shape-accent);
+  box-shadow: 0 0 0 4px rgba(15, 95, 214, 0.14);
+}
+
+.shapes-calc__message {
+  margin: 0;
+  border: 1px solid #d7e0ec;
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: #516079;
+  background: var(--shape-bg-soft);
+  font-size: 14px;
+  font-weight: 600;
+  min-height: 120px;
+}
+
+.shapes-calc__panes {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.shapes-calc__preview-card {
+  border: 1px solid var(--shape-border);
+  border-radius: 14px;
+  padding: 10px;
+  background: linear-gradient(180deg, #f7faff 0%, #ffffff 100%);
+}
+
+.shapes-calc__preview-label {
+  margin: 0 0 8px;
+  color: var(--shape-text-muted);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.shapes-calc__svg {
+  width: 100%;
+  height: auto;
+  max-width: 260px;
+  margin: 0 auto;
+  aspect-ratio: 16 / 11;
+  display: block;
+}
+
+.shapes-calc__shape-fill {
+  fill: rgba(33, 115, 255, 0.14);
+  stroke: rgba(15, 95, 214, 0.9);
+  stroke-width: 2.5;
+}
+
+.shapes-calc__measure-line {
+  stroke: #5f6c80;
+  stroke-width: 2;
+}
+
+.shapes-calc__measure-line--dashed {
+  stroke-dasharray: 6 4;
+}
+
+.shapes-calc__measure-text {
+  fill: #334155;
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+.shapes-calc__result-card {
+  border: 1px solid var(--shape-border);
+  border-radius: 14px;
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background:
+    radial-gradient(140% 100% at 100% 0%, var(--shape-accent-soft) 0%, #ffffff 65%),
+    #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.shapes-calc__result-label {
+  margin: 0;
+  color: var(--shape-text-muted);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.shapes-calc__result-value {
+  margin: 0;
+  font-size: clamp(1.9rem, 4.2vw, 2.4rem);
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.1;
+}
+
+.shapes-calc__unit {
+  font-size: 0.45em;
+  font-weight: 700;
+  color: #516079;
+  margin-left: 6px;
+}
+
+.shapes-calc__formula {
+  border-top: 1px solid #e5eaf2;
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.shapes-calc__formula-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #263144;
+}
+
+.shapes-calc__formula-text {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 14px;
+  color: #2f3b4f;
+}
+
+@media (max-width: 640px) {
+  .shapes-calc {
+    padding: 16px 12px;
+    gap: 14px;
+  }
+
+  .shapes-calc__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .shapes-calc__panes {
+    grid-template-columns: 1fr;
+  }
+
+  .shapes-calc__svg {
+    max-width: 220px;
+  }
+}
