@@ -1,0 +1,11 @@
+---
+import PageLayout from "@layouts/PageLayout.astro";
+import ImageFilterComponent from "@tools/image-filter/ImageFilter.tsx";
+---
+
+<PageLayout
+    title="Image Filter"
+    description="Apply visual filters like grayscale, sepia, brightness, contrast, and more to your images. All processing happens in your browser."
+>
+    <ImageFilterComponent client:load />
+</PageLayout>
