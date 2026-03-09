@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { clamp, cloneImageData, loadImage } from "@tools/shared/imageUtils";
+import { canvasToBlob, clamp, cloneImageData, loadImage } from "@tools/shared/imageUtils";
 import ImageDropZone from "@tools/shared/ImageDropZone";
 import ErrorMessage from "@tools/shared/ErrorMessage";
 import DownloadButton from "@tools/shared/DownloadButton";
+import Spinner from "@tools/shared/Spinner";
 
-type Mode = "click" | "remove-color" | "brush";
+type Mode = "auto" | "click" | "remove-color" | "brush";
 
 type Point = {
     x: number;
@@ -21,6 +22,22 @@ type BrushPreview = {
 const MAX_HISTORY = 20;
 const MAX_PREVIEW_WIDTH = 960;
 const MAX_PREVIEW_HEIGHT = 560;
+const AUTO_REMOVE_ANIMATIONS = `
+@keyframes remove-background-overlay-sweep {
+    0% { transform: translateX(-135%); }
+    100% { transform: translateX(135%); }
+}
+
+@keyframes remove-background-overlay-pulse {
+    0%, 100% { opacity: 0.82; }
+    50% { opacity: 0.96; }
+}
+
+@keyframes remove-background-overlay-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+`;
 
 function updatePreviewCanvasSize(
     canvas: HTMLCanvasElement,
@@ -210,6 +227,90 @@ function eraseStroke(
     return changed;
 }
 
+function pointToSegmentDistanceSquared(point: Point, start: Point, end: Point): number {
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+
+    if (dx === 0 && dy === 0) {
+        const distX = point.x - start.x;
+        const distY = point.y - start.y;
+        return distX * distX + distY * distY;
+    }
+
+    const t = Math.max(
+        0,
+        Math.min(1, ((point.x - start.x) * dx + (point.y - start.y) * dy) / (dx * dx + dy * dy)),
+    );
+    const nearestX = start.x + dx * t;
+    const nearestY = start.y + dy * t;
+    const distX = point.x - nearestX;
+    const distY = point.y - nearestY;
+    return distX * distX + distY * distY;
+}
+
+function strokeTouchesOpaquePixels(
+    imageData: ImageData,
+    start: Point,
+    end: Point,
+    brushRadius: number,
+): boolean {
+    const { width, height, data } = imageData;
+    const radius = Math.max(1, Math.ceil(brushRadius));
+    const radiusSq = radius * radius;
+
+    const minX = Math.max(0, Math.floor(Math.min(start.x, end.x) - radius));
+    const maxX = Math.min(width - 1, Math.ceil(Math.max(start.x, end.x) + radius));
+    const minY = Math.max(0, Math.floor(Math.min(start.y, end.y) - radius));
+    const maxY = Math.min(height - 1, Math.ceil(Math.max(start.y, end.y) + radius));
+
+    for (let y = minY; y <= maxY; y += 1) {
+        for (let x = minX; x <= maxX; x += 1) {
+            const alphaOffset = (y * width + x) * 4 + 3;
+            if (data[alphaOffset] === 0) continue;
+            if (pointToSegmentDistanceSquared({ x, y }, start, end) <= radiusSq) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+function eraseStrokeOnCanvas(
+    canvas: HTMLCanvasElement,
+    start: Point,
+    end: Point,
+    brushRadius: number,
+): void {
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.save();
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.fillStyle = "#000";
+    ctx.strokeStyle = "#000";
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.lineWidth = Math.max(2, brushRadius * 2);
+
+    ctx.beginPath();
+    ctx.moveTo(start.x, start.y);
+    ctx.lineTo(end.x, end.y);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(start.x, start.y, brushRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (start.x !== end.x || start.y !== end.y) {
+        ctx.beginPath();
+        ctx.arc(end.x, end.y, brushRadius, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    ctx.restore();
+}
+
 function shouldIgnoreShortcutTarget(target: EventTarget | null): boolean {
     if (!(target instanceof HTMLElement)) return false;
     if (target.isContentEditable) return true;
@@ -228,16 +329,20 @@ export default function RemoveBackground() {
     const isBrushingRef = useRef(false);
     const hasStrokeChangesRef = useRef(false);
     const lastBrushPointRef = useRef<Point | null>(null);
+    const brushSourceImageDataRef = useRef<ImageData | null>(null);
     const fileBaseNameRef = useRef("image");
     const lastTouchTapRef = useRef(0);
+    const autoRunIdRef = useRef(0);
+    const previewFrameRef = useRef<number | null>(null);
 
-    const [mode, setMode] = useState<Mode>("click");
+    const [mode, setMode] = useState<Mode>("auto");
     const [tolerance, setTolerance] = useState(24);
     const [brushSize, setBrushSize] = useState(24);
     const [dragging, setDragging] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [hasImage, setHasImage] = useState(false);
     const [fileLabel, setFileLabel] = useState("");
+    const [autoRemoving, setAutoRemoving] = useState(false);
     const [canUndo, setCanUndo] = useState(false);
     const [canRedo, setCanRedo] = useState(false);
     const [imageMeta, setImageMeta] = useState<{ width: number; height: number } | null>(
@@ -253,6 +358,10 @@ export default function RemoveBackground() {
     const updateHistoryButtons = useCallback(() => {
         setCanUndo(undoStackRef.current.length > 0);
         setCanRedo(redoStackRef.current.length > 0);
+    }, []);
+
+    const resetAutoState = useCallback(() => {
+        setAutoRemoving(false);
     }, []);
 
     const drawPreview = useCallback(() => {
@@ -275,6 +384,22 @@ export default function RemoveBackground() {
             displayCanvas.width,
             displayCanvas.height,
         );
+    }, []);
+
+    const schedulePreviewDraw = useCallback(() => {
+        if (previewFrameRef.current !== null) return;
+        previewFrameRef.current = window.requestAnimationFrame(() => {
+            previewFrameRef.current = null;
+            drawPreview();
+        });
+    }, [drawPreview]);
+
+    useEffect(() => {
+        return () => {
+            if (previewFrameRef.current !== null) {
+                window.cancelAnimationFrame(previewFrameRef.current);
+            }
+        };
     }, []);
 
     useEffect(() => {
@@ -311,6 +436,9 @@ export default function RemoveBackground() {
     }, [updateHistoryButtons]);
 
     const loadFile = useCallback(async (file: File) => {
+        autoRunIdRef.current += 1;
+        resetAutoState();
+
         if (!file.type.startsWith("image/")) {
             setError("Please upload an image file.");
             return;
@@ -367,7 +495,7 @@ export default function RemoveBackground() {
         } finally {
             URL.revokeObjectURL(objectUrl);
         }
-    }, [updateHistoryButtons]);
+    }, [resetAutoState, updateHistoryButtons]);
 
 
     const handleUndo = useCallback(() => {
@@ -442,8 +570,73 @@ export default function RemoveBackground() {
         }, "image/png");
     }, []);
 
+    const handleAutoRemove = useCallback(async () => {
+        const current = currentImageDataRef.current;
+        const workingCanvas = workingCanvasRef.current;
+        if (!current || !workingCanvas || autoRemoving) return;
+
+        const runId = ++autoRunIdRef.current;
+        setAutoRemoving(true);
+        setError(null);
+
+        try {
+            const sourceBlob = await canvasToBlob(workingCanvas, "image/png");
+            if (autoRunIdRef.current !== runId) return;
+
+            const backgroundRemovalModule = await import("@imgly/background-removal");
+            const removeBackground = (
+                backgroundRemovalModule.default ?? backgroundRemovalModule.removeBackground
+            ) as (image: Blob, configuration?: Record<string, unknown>) => Promise<Blob>;
+            if (autoRunIdRef.current !== runId) return;
+
+            const resultBlob = await removeBackground(sourceBlob, {
+                model: "isnet_fp16",
+                device: "cpu",
+                rescale: true,
+                output: {
+                    format: "image/png",
+                },
+            });
+            if (autoRunIdRef.current !== runId) return;
+
+            const resultUrl = URL.createObjectURL(resultBlob);
+            try {
+                const resultImage = await loadImage(resultUrl);
+                if (autoRunIdRef.current !== runId) return;
+
+                const nextCanvas = document.createElement("canvas");
+                nextCanvas.width = resultImage.naturalWidth;
+                nextCanvas.height = resultImage.naturalHeight;
+                const nextCtx = nextCanvas.getContext("2d", { willReadFrequently: true });
+
+                if (!nextCtx) {
+                    throw new Error("Could not prepare automatic cutout result.");
+                }
+
+                nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
+                nextCtx.drawImage(resultImage, 0, 0);
+                const nextImageData = nextCtx.getImageData(0, 0, nextCanvas.width, nextCanvas.height);
+
+                pushUndoSnapshot();
+                workingCanvasRef.current = nextCanvas;
+                setImageMeta({ width: nextCanvas.width, height: nextCanvas.height });
+                applyAndRender(nextImageData);
+            } finally {
+                URL.revokeObjectURL(resultUrl);
+            }
+        } catch {
+            if (autoRunIdRef.current !== runId) return;
+            setError("Automatic background removal failed. Try again or use the manual tools.");
+        } finally {
+            if (autoRunIdRef.current === runId) {
+                resetAutoState();
+            }
+        }
+    }, [applyAndRender, autoRemoving, pushUndoSnapshot, resetAutoState]);
+
     const runColorRemovalAtPoint = useCallback(
         (point: Point) => {
+            if (autoRemoving) return;
             const current = currentImageDataRef.current;
             if (!current) return;
 
@@ -461,47 +654,68 @@ export default function RemoveBackground() {
             applyAndRender(next);
             setError(null);
         },
-        [applyAndRender, mode, pushUndoSnapshot, tolerance],
+        [applyAndRender, autoRemoving, mode, pushUndoSnapshot, tolerance],
     );
 
     const beginBrush = useCallback(
         (point: Point) => {
+            if (autoRemoving) return;
             const current = currentImageDataRef.current;
-            if (!current) return;
+            const workingCanvas = workingCanvasRef.current;
+            if (!current || !workingCanvas) return;
 
             pushUndoSnapshot();
-            const changed = eraseCircle(current, point.x, point.y, brushSize / 2);
-            applyAndRender(current);
+            brushSourceImageDataRef.current = current;
+
+            const radius = brushSize / 2;
+            const changed = strokeTouchesOpaquePixels(current, point, point, radius);
+            eraseStrokeOnCanvas(workingCanvas, point, point, radius);
+            schedulePreviewDraw();
 
             isBrushingRef.current = true;
             hasStrokeChangesRef.current = changed;
             lastBrushPointRef.current = point;
             setError(null);
         },
-        [applyAndRender, brushSize, pushUndoSnapshot],
+        [autoRemoving, brushSize, pushUndoSnapshot, schedulePreviewDraw],
     );
 
     const continueBrush = useCallback(
         (point: Point) => {
             if (!isBrushingRef.current) return;
-            const current = currentImageDataRef.current;
             const start = lastBrushPointRef.current;
-            if (!current || !start) return;
+            const source = brushSourceImageDataRef.current;
+            const workingCanvas = workingCanvasRef.current;
+            if (!start || !source || !workingCanvas) return;
 
-            const changed = eraseStroke(current, start, point, brushSize / 2);
-            if (changed) {
+            const radius = brushSize / 2;
+            if (!hasStrokeChangesRef.current && strokeTouchesOpaquePixels(source, start, point, radius)) {
                 hasStrokeChangesRef.current = true;
             }
-            applyAndRender(current);
+
+            eraseStrokeOnCanvas(workingCanvas, start, point, radius);
+            schedulePreviewDraw();
             lastBrushPointRef.current = point;
         },
-        [applyAndRender, brushSize],
+        [brushSize, schedulePreviewDraw],
     );
 
     const endBrush = useCallback(() => {
         if (!isBrushingRef.current) return;
         isBrushingRef.current = false;
         lastBrushPointRef.current = null;
+
+        const workingCanvas = workingCanvasRef.current;
+        const workingCtx = workingCanvas?.getContext("2d", { willReadFrequently: true });
+        if (workingCanvas && workingCtx) {
+            currentImageDataRef.current = workingCtx.getImageData(
+                0,
+                0,
+                workingCanvas.width,
+                workingCanvas.height,
+            );
+        }
+        brushSourceImageDataRef.current = null;
 
         if (!hasStrokeChangesRef.current) {
             undoStackRef.current.pop();
@@ -515,23 +729,24 @@ export default function RemoveBackground() {
             const canvas = displayCanvasRef.current;
             const workingCanvas = workingCanvasRef.current;
             if (!canvas || !workingCanvas) return;
+            if (mode !== "brush") return;
 
-            const point = getCanvasPoint(canvas, event.clientX, event.clientY, workingCanvas.width, workingCanvas.height);
-
-            if (mode === "click" || mode === "remove-color") {
-                runColorRemovalAtPoint(point);
-                return;
-            }
-
+            const point = getCanvasPoint(
+                canvas,
+                event.clientX,
+                event.clientY,
+                workingCanvas.width,
+                workingCanvas.height,
+            );
             canvas.setPointerCapture(event.pointerId);
             beginBrush(point);
         },
-        [beginBrush, mode, runColorRemovalAtPoint],
+        [beginBrush, mode],
     );
 
     const onCanvasTouchStart = useCallback(
         (event: React.TouchEvent<HTMLCanvasElement>) => {
-            if (mode !== "click" && mode !== "remove-color") return;
+            if (mode !== "auto" && mode !== "click" && mode !== "remove-color") return;
             const touch = event.touches[0];
             if (!touch) return;
 
@@ -541,25 +756,34 @@ export default function RemoveBackground() {
 
             event.preventDefault();
             lastTouchTapRef.current = Date.now();
+            if (mode === "auto") {
+                handleAutoRemove();
+                return;
+            }
             const point = getCanvasPoint(canvas, touch.clientX, touch.clientY, workingCanvas.width, workingCanvas.height);
             runColorRemovalAtPoint(point);
         },
-        [mode, runColorRemovalAtPoint],
+        [handleAutoRemove, mode, runColorRemovalAtPoint],
     );
 
     const onCanvasClick = useCallback(
         (event: React.MouseEvent<HTMLCanvasElement>) => {
-            if (mode !== "click" && mode !== "remove-color") return;
             if (Date.now() - lastTouchTapRef.current < 500) return;
 
             const canvas = displayCanvasRef.current;
             const workingCanvas = workingCanvasRef.current;
             if (!canvas || !workingCanvas) return;
 
+            if (mode === "auto") {
+                handleAutoRemove();
+                return;
+            }
+            if (mode !== "click" && mode !== "remove-color") return;
+
             const point = getCanvasPoint(canvas, event.clientX, event.clientY, workingCanvas.width, workingCanvas.height);
             runColorRemovalAtPoint(point);
         },
-        [mode, runColorRemovalAtPoint],
+        [handleAutoRemove, mode, runColorRemovalAtPoint],
     );
 
     const updateBrushPreviewFromPointer = useCallback(
@@ -634,6 +858,9 @@ export default function RemoveBackground() {
     }, [mode]);
 
     const modeHint = useMemo(() => {
+        if (mode === "auto") {
+            return "Click the button to auto remove the background. Runs entirely in your browser.";
+        }
         if (mode === "click") {
             return "Tap a region to remove connected pixels.";
         }
@@ -645,6 +872,7 @@ export default function RemoveBackground() {
 
     return (
         <div style={styles.pageContainer}>
+            <style>{AUTO_REMOVE_ANIMATIONS}</style>
             <ImageDropZone
                 onFile={loadFile}
                 dragging={dragging}
@@ -688,22 +916,33 @@ export default function RemoveBackground() {
                             <div style={styles.modeButtonsRow}>
                                 <button
                                     type="button"
-                                    onClick={() => setMode("click")}
-                                    style={styles.modeButton(mode === "click")}
+                                    onClick={() => setMode("auto")}
+                                    disabled={autoRemoving}
+                                    style={styles.modeButton(mode === "auto", autoRemoving)}
                                 >
-                                    Smart Remove
+                                    Auto Remove
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setMode("click")}
+                                    disabled={autoRemoving}
+                                    style={styles.modeButton(mode === "click", autoRemoving)}
+                                >
+                                    Area Remove
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setMode("remove-color")}
-                                    style={styles.modeButton(mode === "remove-color")}
+                                    disabled={autoRemoving}
+                                    style={styles.modeButton(mode === "remove-color", autoRemoving)}
                                 >
                                     Color Remove
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setMode("brush")}
-                                    style={styles.modeButton(mode === "brush")}
+                                    disabled={autoRemoving}
+                                    style={styles.modeButton(mode === "brush", autoRemoving)}
                                 >
                                     Brush Erase
                                 </button>
@@ -712,6 +951,18 @@ export default function RemoveBackground() {
                             <p style={styles.modeHint}>{modeHint}</p>
 
                             <div style={styles.sliderGrid}>
+                                {mode === "auto" && (
+                                    <div style={styles.autoActionGroup}>
+                                        <button
+                                            type="button"
+                                            onClick={handleAutoRemove}
+                                            disabled={autoRemoving}
+                                            style={styles.autoRemoveButton(autoRemoving)}
+                                        >
+                                            {autoRemoving ? "Removing Background..." : "Remove Background"}
+                                        </button>
+                                    </div>
+                                )}
                                 {(mode === "click" || mode === "remove-color") && (
                                     <div style={styles.sliderGroup}>
                                         <label style={styles.sliderLabel}>
@@ -738,7 +989,7 @@ export default function RemoveBackground() {
                                         <input
                                             type="range"
                                             min={2}
-                                            max={120}
+                                            max={240}
                                             value={brushSize}
                                             onChange={(event) =>
                                                 setBrushSize(Number(event.currentTarget.value))
@@ -769,7 +1020,8 @@ export default function RemoveBackground() {
                             <button
                                 type="button"
                                 onClick={handleReset}
-                                style={styles.resetButton}
+                                disabled={autoRemoving}
+                                style={styles.resetButton(autoRemoving)}
                             >
                                 Reset
                             </button>
@@ -790,6 +1042,22 @@ export default function RemoveBackground() {
                                 onClick={onCanvasClick}
                                 style={styles.canvas(mode)}
                             />
+                            {autoRemoving && (
+                                <div style={styles.autoOverlay}>
+                                    <div style={styles.autoOverlaySweep} />
+                                    <div style={styles.autoOverlayCard}>
+                                        <div style={styles.autoOverlaySpinner}>
+                                            <Spinner size={26} color="#ffffff" />
+                                        </div>
+                                        <strong style={styles.autoOverlayTitle}>
+                                            Removing background
+                                        </strong>
+                                        <span style={styles.autoOverlaySubtext}>
+                                            This may take a minute...
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
                             {mode === "brush" && brushPreview.visible && (
                                 <div style={styles.brushPreview(brushPreview)} />
                             )}
@@ -800,6 +1068,7 @@ export default function RemoveBackground() {
                                 filename="image-no-bg.png"
                                 label="Download PNG"
                                 theme="light"
+                                disabled={autoRemoving}
                             />
                         </div>
                     </div>
@@ -873,13 +1142,13 @@ const styles = {
         gap: "0.5rem",
         flexWrap: "wrap",
     } satisfies CSSProperties,
-    modeButton: (active: boolean): CSSProperties => ({
+    modeButton: (active: boolean, disabled: boolean): CSSProperties => ({
         padding: "0.55rem 0.8rem",
         borderRadius: "8px",
         border: active ? "1px solid #2563eb" : "1px solid #cbd5e1",
-        background: active ? "#dbeafe" : "#fff",
-        color: "#0f172a",
-        cursor: "pointer",
+        background: disabled ? "#f8fafc" : active ? "#dbeafe" : "#fff",
+        color: disabled ? "#94a3b8" : "#0f172a",
+        cursor: disabled ? "not-allowed" : "pointer",
     }),
     modeHint: {
         color: "#64748b",
@@ -896,6 +1165,24 @@ const styles = {
         display: "flex",
         flexDirection: "column",
         gap: "0.45rem",
+    } satisfies CSSProperties,
+    autoActionGroup: {
+        display: "flex",
+        flexDirection: "column",
+        gap: "0.45rem",
+    } satisfies CSSProperties,
+    autoRemoveButton: (disabled: boolean): CSSProperties => ({
+        padding: "0.6rem 0.9rem",
+        borderRadius: "8px",
+        border: "1px solid #2563eb",
+        background: disabled ? "#93c5fd" : "#2563eb",
+        color: "#fff",
+        cursor: disabled ? "not-allowed" : "pointer",
+        fontWeight: 600,
+    }),
+    autoHelperText: {
+        color: "#64748b",
+        fontSize: "0.85rem",
     } satisfies CSSProperties,
     sliderLabel: {
         display: "flex",
@@ -920,14 +1207,14 @@ const styles = {
         color: disabled ? "#94a3b8" : "#0f172a",
         cursor: disabled ? "not-allowed" : "pointer",
     }),
-    resetButton: {
+    resetButton: (disabled: boolean): CSSProperties => ({
         padding: "0.55rem 0.8rem",
         borderRadius: "8px",
         border: "1px solid #fecaca",
-        background: "#fff1f2",
-        color: "#b91c1c",
-        cursor: "pointer",
-    } satisfies CSSProperties,
+        background: disabled ? "#ffe4e6" : "#fff1f2",
+        color: disabled ? "#f43f5e" : "#b91c1c",
+        cursor: disabled ? "not-allowed" : "pointer",
+    }),
     canvasCard: {
         border: "1px solid #cbd5e1",
         padding: "0.75rem",
@@ -950,9 +1237,67 @@ const styles = {
     canvas: (mode: Mode): CSSProperties => ({
         display: "block",
         maxWidth: "100%",
-        cursor: mode === "brush" ? "none" : "crosshair",
+        cursor: mode === "brush" ? "none" : mode === "auto" ? "pointer" : "crosshair",
         touchAction: "none",
     }),
+    autoOverlay: {
+        position: "absolute",
+        inset: 0,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        overflow: "hidden",
+        background: "rgba(15, 23, 42, 0.38)",
+        backdropFilter: "blur(1.5px)",
+        pointerEvents: "auto",
+        animation: "remove-background-overlay-pulse 1.8s ease-in-out infinite",
+    } satisfies CSSProperties,
+    autoOverlaySweep: {
+        position: "absolute",
+        inset: "-20%",
+        background:
+            "linear-gradient(100deg, rgba(255,255,255,0) 25%, rgba(255,255,255,0.18) 50%, rgba(255,255,255,0) 75%)",
+        animation: "remove-background-overlay-sweep 1.8s ease-in-out infinite",
+    } satisfies CSSProperties,
+    autoOverlayCard: {
+        position: "relative",
+        zIndex: 1,
+        minWidth: "min(320px, calc(100% - 2rem))",
+        maxWidth: "calc(100% - 2rem)",
+        padding: "1rem 1.1rem",
+        borderRadius: "14px",
+        background: "rgba(15, 23, 42, 0.82)",
+        border: "1px solid rgba(255, 255, 255, 0.16)",
+        boxShadow: "0 18px 44px rgba(15, 23, 42, 0.24)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: "0.55rem",
+        textAlign: "center",
+        color: "#f8fafc",
+    } satisfies CSSProperties,
+    autoOverlaySpinner: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: "44px",
+        height: "44px",
+        borderRadius: "9999px",
+        background: "rgba(255, 255, 255, 0.08)",
+    } satisfies CSSProperties,
+    autoOverlayTitle: {
+        fontSize: "1rem",
+        lineHeight: 1.2,
+    } satisfies CSSProperties,
+    autoOverlayText: {
+        fontSize: "0.92rem",
+        color: "rgba(248, 250, 252, 0.92)",
+    } satisfies CSSProperties,
+    autoOverlaySubtext: {
+        fontSize: "0.8rem",
+        color: "rgba(226, 232, 240, 0.82)",
+        marginBottom: "1rem",
+    } satisfies CSSProperties,
     brushPreview: (brushPreview: BrushPreview): CSSProperties => ({
         position: "absolute",
         left: `${brushPreview.x}px`,
