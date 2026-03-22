@@ -442,6 +442,10 @@ const styles: Record<string, CSSProperties> = {
         fontSize: "1.1rem",
         fontWeight: 700,
     },
+    compareHandleKnobMobile: {
+        width: 48,
+        height: 48,
+    },
     compareHandleGlyph: {
         letterSpacing: "-0.2em",
         transform: "translateX(-1px)",
@@ -587,6 +591,15 @@ function ComparePreview({
     originalUrl,
 }: ComparePreviewProps) {
     const frameRef = useRef<HTMLDivElement | null>(null);
+    const dragSessionRef = useRef<{
+        activeInput: "pointer" | "touch" | null;
+        isDragging: boolean;
+        pointerId: number | null;
+    }>({
+        activeInput: null,
+        isDragging: false,
+        pointerId: null,
+    });
     const isInteractive = Boolean(compressedUrl && !loading);
 
     const updateFromClientX = useCallback(
@@ -603,30 +616,103 @@ function ComparePreview({
         [onComparePositionChange],
     );
 
-    const handlePointerDown = useCallback(
-        (event: React.PointerEvent<HTMLDivElement>) => {
+    useEffect(() => {
+        const frame = frameRef.current;
+        if (!frame) return;
+
+        const dragSession = dragSessionRef.current;
+
+        const stopPointerDrag = () => {
+            dragSession.isDragging = false;
+            dragSession.activeInput = null;
+            dragSession.pointerId = null;
+            window.removeEventListener("pointermove", handlePointerMove);
+            window.removeEventListener("pointerup", stopPointerDrag);
+            window.removeEventListener("pointercancel", stopPointerDrag);
+        };
+
+        const handlePointerMove = (event: PointerEvent) => {
+            if (!dragSession.isDragging || dragSession.activeInput !== "pointer") return;
+            if (dragSession.pointerId !== null && event.pointerId !== dragSession.pointerId) return;
+            updateFromClientX(event.clientX);
+        };
+
+        const stopTouchDrag = () => {
+            dragSession.isDragging = false;
+            dragSession.activeInput = null;
+            dragSession.pointerId = null;
+            window.removeEventListener("touchmove", handleTouchMove);
+            window.removeEventListener("touchend", stopTouchDrag);
+            window.removeEventListener("touchcancel", stopTouchDrag);
+        };
+
+        const handleTouchMove = (event: TouchEvent) => {
+            if (!dragSession.isDragging || dragSession.activeInput !== "touch") return;
+
+            const touch = event.touches[0];
+            if (!touch) {
+                stopTouchDrag();
+                return;
+            }
+
+            if (event.cancelable) {
+                event.preventDefault();
+            }
+
+            updateFromClientX(touch.clientX);
+        };
+
+        const startPointerDrag = (event: PointerEvent) => {
+            if (!isInteractive || event.pointerType === "touch") return;
+
+            stopTouchDrag();
+            stopPointerDrag();
+            dragSession.isDragging = true;
+            dragSession.activeInput = "pointer";
+            dragSession.pointerId = event.pointerId;
+            updateFromClientX(event.clientX);
+
+            if (event.cancelable) {
+                event.preventDefault();
+            }
+
+            window.addEventListener("pointermove", handlePointerMove);
+            window.addEventListener("pointerup", stopPointerDrag);
+            window.addEventListener("pointercancel", stopPointerDrag);
+        };
+
+        const startTouchDrag = (event: TouchEvent) => {
             if (!isInteractive) return;
 
-            event.preventDefault();
-            event.currentTarget.setPointerCapture(event.pointerId);
-            updateFromClientX(event.clientX);
-        },
-        [isInteractive, updateFromClientX],
-    );
+            const touch = event.touches[0];
+            if (!touch) return;
 
-    const handlePointerMove = useCallback(
-        (event: React.PointerEvent<HTMLDivElement>) => {
-            if (!isInteractive || !event.currentTarget.hasPointerCapture(event.pointerId)) return;
-            updateFromClientX(event.clientX);
-        },
-        [isInteractive, updateFromClientX],
-    );
+            stopPointerDrag();
+            stopTouchDrag();
+            dragSession.isDragging = true;
+            dragSession.activeInput = "touch";
+            dragSession.pointerId = null;
+            updateFromClientX(touch.clientX);
 
-    const handlePointerUp = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
-        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-            event.currentTarget.releasePointerCapture(event.pointerId);
-        }
-    }, []);
+            if (event.cancelable) {
+                event.preventDefault();
+            }
+
+            window.addEventListener("touchmove", handleTouchMove, { passive: false });
+            window.addEventListener("touchend", stopTouchDrag);
+            window.addEventListener("touchcancel", stopTouchDrag);
+        };
+
+        frame.addEventListener("pointerdown", startPointerDrag);
+        frame.addEventListener("touchstart", startTouchDrag, { passive: false });
+
+        return () => {
+            stopPointerDrag();
+            stopTouchDrag();
+            frame.removeEventListener("pointerdown", startPointerDrag);
+            frame.removeEventListener("touchstart", startTouchDrag);
+        };
+    }, [isInteractive, updateFromClientX]);
 
     const compareFrameStyle = {
         ...styles.compareFrame,
@@ -640,6 +726,10 @@ function ComparePreview({
     const compareHandleWrapStyle = {
         ...styles.compareHandleWrap,
         left: `${comparePosition}%`,
+    };
+    const compareHandleKnobStyle = {
+        ...styles.compareHandleKnob,
+        ...(isMobile ? styles.compareHandleKnobMobile : {}),
     };
 
     return (
@@ -658,10 +748,6 @@ function ComparePreview({
 
             <div
                 ref={frameRef}
-                onPointerDown={handlePointerDown}
-                onPointerMove={handlePointerMove}
-                onPointerUp={handlePointerUp}
-                onPointerCancel={handlePointerUp}
                 style={compareFrameStyle}
             >
                 {originalUrl && <img src={originalUrl} alt="Original JPG for comparison" style={styles.compareImage} />}
@@ -681,7 +767,7 @@ function ComparePreview({
 
                         <div style={compareHandleWrapStyle}>
                             <div style={styles.compareHandleRail} />
-                            <div style={styles.compareHandleKnob}>
+                            <div style={compareHandleKnobStyle}>
                                 <span style={styles.compareHandleGlyph}>&lt;&gt;</span>
                             </div>
                         </div>
@@ -1158,6 +1244,11 @@ export default function JpgCompressor() {
                     <div style={controlsCardStyle}>
                         <label style={styles.targetLabel}>
                             <span style={styles.targetLabelText}>Target size</span>
+                            <div style={styles.targetHelp}>
+                                Searches for the highest JPEG quality that stays under your target.
+                                <br />
+                                If that is impossible without resizing, you still get the smallest best-effort JPG.
+                            </div>
                             <div style={styles.targetInputShell}>
                                 <input
                                     type="number"
@@ -1172,12 +1263,6 @@ export default function JpgCompressor() {
                                 <span style={styles.targetUnit}>KB</span>
                             </div>
                         </label>
-
-                        <div style={styles.targetHelp}>
-                            Searches for the highest JPEG quality that stays under your target.
-                            <br />
-                            If that is impossible without resizing, you still get the smallest best-effort JPG.
-                        </div>
                     </div>
 
                     <ErrorMessage message={inputError} theme="light" />
