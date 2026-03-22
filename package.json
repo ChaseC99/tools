@@ -15,6 +15,7 @@
     "@astrojs/svelte": "^5.7.1",
     "@astrojs/vue": "^4.5.1",
     "@imgly/background-removal": "^1.7.0",
+    "@jsquash/jpeg": "^1.6.0",
     "@types/diff": "^8.0.0",
     "@types/react": "^18.3.8",
     "@types/react-dom": "^18.3.0",

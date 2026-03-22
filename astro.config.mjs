@@ -6,5 +6,10 @@ import svelte from "@astrojs/svelte";
 // https://astro.build/config
 export default defineConfig({
   site: 'https://tools.chase.link',
-  integrations: [vue(), react(), svelte()]
+  integrations: [vue(), react(), svelte()],
+  vite: {
+    worker: {
+      format: "es",
+    },
+  },
 });

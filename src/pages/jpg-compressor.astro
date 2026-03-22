@@ -1,0 +1,11 @@
+---
+import PageLayout from "@layouts/PageLayout.astro";
+import JpgCompressorComponent from "@tools/jpg-compressor/JpgCompressor.tsx";
+---
+
+<PageLayout
+    title="JPG Compressor"
+    description="Compress JPG images in your browser with no upload required."
+>
+    <JpgCompressorComponent client:load />
+</PageLayout>
