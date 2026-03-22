@@ -11,13 +11,6 @@ const { title } = Astro.props;
             <a href="/" class="navbar-tools-link" tabindex="-1">Tools</a>
         </div>
         <div class="navbar-tools-side">
-            <input
-                type="search"
-                placeholder="Search tools"
-                aria-label="Search tools"
-                id="search"
-                autocomplete="off"
-            />
             <img
                 id='tools-dropdown'
                 src='/icons/tool.svg'
@@ -156,8 +149,7 @@ const { title } = Astro.props;
     const toggleDropdown = () => {
         const isOpen = document.getElementById('tools').classList.toggle('show');
         document.getElementById('tools-dropdown').classList.toggle('expanded');
-        document.getElementById('search').classList.toggle('show');
-
+        
         const pageTitle = document.querySelector('.navbar-page-title');
         const toolsLink = document.querySelector('.navbar-tools-link') as HTMLElement;
         const isHome = window.location.pathname === '/';
