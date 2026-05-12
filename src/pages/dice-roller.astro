@@ -1,0 +1,8 @@
+---
+import PageLayout from "@layouts/PageLayout.astro";
+import DiceRollerComponent from "@tools/dice-roller/DiceRoller.tsx";
+---
+
+<PageLayout title="Dice Roller" description="Roll configurable dice with a satisfying animation.">
+	<DiceRollerComponent client:load />
+</PageLayout>
