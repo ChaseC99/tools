@@ -1,0 +1,221 @@
+.pizza-calc {
+  --pizza-bg-soft: #fffbeb;
+  --pizza-border: #e5d5b0;
+  --pizza-border-strong: #c9a96e;
+  --pizza-text-muted: #78621f;
+  --pizza-accent: #d97706;
+  --pizza-accent-soft: #fef3c7;
+  --pizza-cheese: #fbbf24;
+  --pizza-crust: #d4a056;
+
+  max-width: 760px;
+  margin: 20px auto;
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pizza-calc__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+}
+
+.pizza-calc__field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.pizza-calc__label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #2b3444;
+  letter-spacing: 0.02em;
+}
+
+.pizza-calc__input,
+.pizza-calc__select {
+  width: 100%;
+  border: 1px solid var(--pizza-border);
+  border-radius: 10px;
+  padding: 11px 12px;
+  font-size: 16px;
+  color: #1f2937;
+  background: #fff;
+  box-sizing: border-box;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.pizza-calc__input::placeholder {
+  color: #9aa7bb;
+}
+
+.pizza-calc__input:hover,
+.pizza-calc__select:hover {
+  border-color: var(--pizza-border-strong);
+}
+
+.pizza-calc__input:focus,
+.pizza-calc__select:focus {
+  outline: none;
+  border-color: var(--pizza-accent);
+  box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.14);
+}
+
+.pizza-calc__toggle-group {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--pizza-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.pizza-calc__toggle-btn {
+  flex: 1;
+  padding: 11px 12px;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  background: #fff;
+  color: #1f2937;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.pizza-calc__toggle-btn:not(:last-child) {
+  border-right: 1px solid var(--pizza-border);
+}
+
+.pizza-calc__toggle-btn--active {
+  background: var(--pizza-accent);
+  color: #fff;
+}
+
+.pizza-calc__message {
+  margin: 0;
+  border: 1px solid var(--pizza-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: var(--pizza-text-muted);
+  background: var(--pizza-bg-soft);
+  font-size: 14px;
+  font-weight: 600;
+  min-height: 80px;
+}
+
+.pizza-calc__cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.pizza-calc__card {
+  border: 1px solid var(--pizza-border);
+  border-radius: 14px;
+  padding: 16px;
+  text-align: center;
+  background: #fff;
+}
+
+.pizza-calc__card--primary {
+  background:
+    radial-gradient(140% 100% at 100% 0%, var(--pizza-accent-soft) 0%, #ffffff 65%),
+    #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.pizza-calc__card-label {
+  margin: 0;
+  color: var(--pizza-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pizza-calc__card-value {
+  margin: 6px 0 0;
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.1;
+}
+
+.pizza-calc__card--primary .pizza-calc__card-value {
+  color: var(--pizza-accent);
+}
+
+.pizza-calc__card-unit {
+  font-size: 0.45em;
+  font-weight: 700;
+  color: #516079;
+  margin-left: 4px;
+}
+
+.pizza-calc__visual {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--pizza-border);
+  border-radius: 14px;
+  background: var(--pizza-bg-soft);
+  align-items: center;
+}
+
+.pizza-calc__pizza-svg {
+  width: 64px;
+  height: 64px;
+}
+
+.pizza-calc__overflow {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--pizza-text-muted);
+}
+
+.pizza-calc__formula {
+  border: 1px solid var(--pizza-border);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  background: #fff;
+}
+
+.pizza-calc__formula-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #263144;
+}
+
+.pizza-calc__formula-text {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 14px;
+  color: #2f3b4f;
+}
+
+@media (max-width: 640px) {
+  .pizza-calc {
+    padding: 16px 12px;
+    gap: 14px;
+  }
+
+  .pizza-calc__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pizza-calc__cards {
+    grid-template-columns: 1fr;
+  }
+
+  .pizza-calc__pizza-svg {
+    width: 48px;
+    height: 48px;
+  }
+}
