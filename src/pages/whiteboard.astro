@@ -2,26 +2,26 @@
 import PageLayout from "@layouts/PageLayout.astro";
 ---
 
-<PageLayout title="Whiteboard" description="A simple whiteboard for freehand drawing with pen, eraser, and customizable backgrounds.">
+<PageLayout title="Whiteboard" description="A simple whiteboard for freehand drawing with pen, eraser, and customizable backgrounds." fullBleed>
     <div class="whiteboard-page">
         <div id="whiteboard-board" class="board board-pattern-none" style="--board-bg:#ffffff;">
             <canvas id="whiteboard-canvas" aria-label="Drawing canvas"></canvas>
             <div id="cursor-preview" class="cursor-preview is-hidden" aria-hidden="true"></div>
         </div>
 
-        <div class="toolbar" role="toolbar" aria-label="Whiteboard tools">
+        <div class="toolbar ui-floating-panel" role="toolbar" aria-label="Whiteboard tools">
             <div class="toolbar-row">
-                <button id="tool-pen" type="button" class="tool-button is-active">Pen</button>
-                <button id="tool-erase" type="button" class="tool-button">Erase</button>
-                <button id="tool-background" type="button" class="tool-button">Background</button>
-                <button id="tool-save" type="button" class="save-button">Save</button>
-                <button id="tool-reset" type="button" class="reset-button">Reset</button>
+                <button id="tool-pen" type="button" class="tool-button ui-button is-active" data-variant="secondary">Pen</button>
+                <button id="tool-erase" type="button" class="tool-button ui-button" data-variant="secondary">Erase</button>
+                <button id="tool-background" type="button" class="tool-button ui-button" data-variant="secondary">Background</button>
+                <button id="tool-save" type="button" class="ui-button">Save</button>
+                <button id="tool-reset" type="button" class="ui-button" data-variant="danger">Reset</button>
             </div>
 
-            <div id="panel-pen" class="panel">
-                <label class="label" for="pen-size">
+            <div id="panel-pen" class="panel ui-stack" data-gap="sm">
+                <label class="label ui-label" for="pen-size">
                     <span>Size</span>
-                    <input id="pen-size" type="range" min="1" max="40" value="4" />
+                    <input class="ui-range" id="pen-size" type="range" min="1" max="40" value="4" />
                     <span id="pen-size-value" class="value">4px</span>
                 </label>
                 <div class="color-row" aria-label="Pen colors">
@@ -31,26 +31,26 @@ import PageLayout from "@layouts/PageLayout.astro";
                     <button type="button" class="color-swatch" style="--swatch:#22c55e" data-color="#22c55e" aria-label="Set pen color #22c55e"></button>
                     <button type="button" class="color-swatch" style="--swatch:#f59e0b" data-color="#f59e0b" aria-label="Set pen color #f59e0b"></button>
                     <button type="button" class="color-swatch" style="--swatch:#a855f7" data-color="#a855f7" aria-label="Set pen color #a855f7"></button>
-                    <input id="pen-color" type="color" value="#111827" aria-label="Custom pen color" />
+                    <input class="ui-color-input" id="pen-color" type="color" value="#111827" aria-label="Custom pen color" />
                 </div>
             </div>
 
-            <div id="panel-erase" class="panel is-hidden" aria-hidden="true">
-                <label class="label" for="erase-size">
+            <div id="panel-erase" class="panel ui-stack is-hidden" data-gap="sm" aria-hidden="true">
+                <label class="label ui-label" for="erase-size">
                     <span>Size</span>
-                    <input id="erase-size" type="range" min="4" max="80" value="20" />
+                    <input class="ui-range" id="erase-size" type="range" min="4" max="80" value="20" />
                     <span id="erase-size-value" class="value">20px</span>
                 </label>
             </div>
 
-            <div id="panel-background" class="panel is-hidden" aria-hidden="true">
-                <label class="label" for="background-color">
+            <div id="panel-background" class="panel ui-stack is-hidden" data-gap="sm" aria-hidden="true">
+                <label class="label ui-label" for="background-color">
                     <span>Color</span>
-                    <input id="background-color" type="color" value="#ffffff" />
+                    <input class="ui-color-input" id="background-color" type="color" value="#ffffff" />
                 </label>
-                <label class="label" for="background-pattern">
+                <label class="label ui-label" for="background-pattern">
                     <span>Pattern</span>
-                    <select id="background-pattern">
+                    <select class="ui-select" id="background-pattern">
                         <option value="none">None</option>
                         <option value="dots">Dots</option>
                         <option value="lines">Lines</option>
@@ -60,7 +60,6 @@ import PageLayout from "@layouts/PageLayout.astro";
             </div>
         </div>
     </div>
-
     <script>
         const board = document.getElementById("whiteboard-board") as HTMLDivElement | null;
         const canvas = document.getElementById("whiteboard-canvas") as HTMLCanvasElement | null;
@@ -543,10 +542,6 @@ import PageLayout from "@layouts/PageLayout.astro";
         flex-direction: column;
         gap: 10px;
         padding: 12px;
-        border: 1px solid #d1d5db;
-        border-radius: 12px;
-        background: rgba(255, 255, 255, 0.95);
-        box-shadow: 0 8px 30px rgba(15, 23, 42, 0.15);
     }
 
     .toolbar-row {
@@ -556,8 +551,6 @@ import PageLayout from "@layouts/PageLayout.astro";
     }
 
     .tool-button,
-    .save-button,
-    .reset-button,
     .color-swatch,
     #pen-color,
     #background-color,
@@ -566,36 +559,10 @@ import PageLayout from "@layouts/PageLayout.astro";
         cursor: pointer;
     }
 
-    .tool-button {
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-        background: #fff;
-        padding: 8px 10px;
-        font-size: 14px;
-    }
-
     .tool-button.is-active {
-        border-color: #2563eb;
-        background: #eff6ff;
-        color: #1d4ed8;
-    }
-
-    .reset-button {
-        border: 1px solid #fecaca;
-        border-radius: 8px;
-        background: #fef2f2;
-        color: #b91c1c;
-        padding: 8px 10px;
-        font-size: 14px;
-    }
-
-    .save-button {
-        border: 1px solid #86efac;
-        border-radius: 8px;
-        background: #f0fdf4;
-        color: #166534;
-        padding: 8px 10px;
-        font-size: 14px;
+        border-color: var(--ui-color-focus);
+        background: var(--ui-color-surface-inset);
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--ui-color-focus) 12%, transparent);
     }
 
     .panel {
@@ -622,7 +589,7 @@ import PageLayout from "@layouts/PageLayout.astro";
 
     .value {
         min-width: 50px;
-        font-family: monospace;
+        font-family: var(--ui-font-mono);
     }
 
     .color-row {
@@ -636,7 +603,7 @@ import PageLayout from "@layouts/PageLayout.astro";
         width: 24px;
         height: 24px;
         border-radius: 999px;
-        border: 1px solid #cbd5e1;
+        border: 1px solid var(--ui-color-border);
         background: var(--swatch);
         padding: 0;
     }
@@ -645,20 +612,5 @@ import PageLayout from "@layouts/PageLayout.astro";
         outline: 2px solid #111827;
     }
 
-    #pen-color,
-    #background-color {
-        width: 36px;
-        height: 30px;
-        border: 1px solid #cbd5e1;
-        border-radius: 6px;
-        padding: 2px;
-        background: #fff;
-    }
-
-    select {
-        border: 1px solid #cbd5e1;
-        border-radius: 6px;
-        padding: 6px 8px;
-        background: #fff;
-    }
+    #background-pattern { width: auto; }
 </style>

@@ -1,0 +1,121 @@
+:root,
+[data-theme="light"] {
+    color-scheme: light;
+
+    --ui-color-page: #f7f7f5;
+    --ui-color-surface: #ffffff;
+    --ui-color-surface-raised: #ffffff;
+    --ui-color-surface-inset: #efefec;
+    --ui-color-surface-hover: #f4f4f1;
+    --ui-color-text: #181817;
+    --ui-color-text-muted: #666662;
+    --ui-color-text-subtle: #898984;
+    --ui-color-border: #d7d7d2;
+    --ui-color-border-strong: #a9a9a3;
+    --ui-color-action: #1d1d1b;
+    --ui-color-action-hover: #383836;
+    --ui-color-action-text: #ffffff;
+    --ui-color-focus: #1d1d1b;
+    --ui-color-focus-offset: #ffffff;
+    --ui-color-overlay: rgba(20, 20, 18, 0.46);
+
+    --ui-color-success: #176b3a;
+    --ui-color-success-surface: #eaf6ee;
+    --ui-color-success-border: #a7d7b7;
+    --ui-color-warning: #76530b;
+    --ui-color-warning-surface: #fff6da;
+    --ui-color-warning-border: #e9d188;
+    --ui-color-danger: #a22b2b;
+    --ui-color-danger-surface: #fcecec;
+    --ui-color-danger-border: #e8b4b4;
+    --ui-color-info: #3f4855;
+    --ui-color-info-surface: #edf0f3;
+    --ui-color-info-border: #c7cdd4;
+
+    --ui-shadow-sm: 0 1px 2px rgba(20, 20, 18, 0.05), 0 1px 6px rgba(20, 20, 18, 0.04);
+    --ui-shadow-md: 0 12px 32px rgba(20, 20, 18, 0.09);
+}
+
+[data-theme="dark"] {
+    color-scheme: dark;
+
+    --ui-color-page: #111110;
+    --ui-color-surface: #191918;
+    --ui-color-surface-raised: #20201f;
+    --ui-color-surface-inset: #0d0d0c;
+    --ui-color-surface-hover: #252524;
+    --ui-color-text: #f3f3f0;
+    --ui-color-text-muted: #aaa9a3;
+    --ui-color-text-subtle: #85857f;
+    --ui-color-border: #383836;
+    --ui-color-border-strong: #60605c;
+    --ui-color-action: #f1f1ed;
+    --ui-color-action-hover: #d9d9d4;
+    --ui-color-action-text: #151514;
+    --ui-color-focus: #f3f3f0;
+    --ui-color-focus-offset: #111110;
+    --ui-color-overlay: rgba(0, 0, 0, 0.66);
+
+    --ui-color-success: #8ed0a5;
+    --ui-color-success-surface: #16271c;
+    --ui-color-success-border: #315d40;
+    --ui-color-warning: #e2c26f;
+    --ui-color-warning-surface: #2b2414;
+    --ui-color-warning-border: #5b4a20;
+    --ui-color-danger: #ef9c9c;
+    --ui-color-danger-surface: #301919;
+    --ui-color-danger-border: #6c3535;
+    --ui-color-info: #c1c8d0;
+    --ui-color-info-surface: #20252b;
+    --ui-color-info-border: #424a54;
+
+    --ui-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25), 0 1px 8px rgba(0, 0, 0, 0.18);
+    --ui-shadow-md: 0 16px 40px rgba(0, 0, 0, 0.32);
+}
+
+:root {
+    --ui-font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --ui-font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+
+    --ui-font-size-xs: 0.75rem;
+    --ui-font-size-sm: 0.875rem;
+    --ui-font-size-md: 1rem;
+    --ui-font-size-lg: 1.125rem;
+    --ui-font-size-xl: 1.5rem;
+    --ui-font-size-2xl: clamp(1.75rem, 4vw, 2.5rem);
+    --ui-font-size-display: clamp(3.25rem, 10vw, 6rem);
+
+    --ui-line-height-tight: 1.15;
+    --ui-line-height-body: 1.5;
+
+    --ui-space-0: 0;
+    --ui-space-1: 0.25rem;
+    --ui-space-2: 0.5rem;
+    --ui-space-3: 0.75rem;
+    --ui-space-4: 1rem;
+    --ui-space-5: 1.25rem;
+    --ui-space-6: 1.5rem;
+    --ui-space-8: 2rem;
+    --ui-space-10: 2.5rem;
+    --ui-space-12: 3rem;
+    --ui-space-16: 4rem;
+
+    --ui-radius-sm: 6px;
+    --ui-radius-md: 8px;
+    --ui-radius-lg: 12px;
+    --ui-radius-pill: 999px;
+
+    --ui-content-wide: 1100px;
+
+    --ui-control-height-sm: 2rem;
+    --ui-control-height-md: 2.5rem;
+    --ui-control-height-lg: 3rem;
+
+    --ui-motion-fast: 120ms;
+    --ui-motion-base: 180ms;
+    --ui-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+
+    --ui-z-drawer: 50;
+    --ui-z-header: 100;
+    --ui-z-overlay: 200;
+}

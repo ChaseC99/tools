@@ -207,10 +207,10 @@ export default function InvestmentCalc() {
   );
 
   return (
-    <div className="investment-calc">
-      <div className="inputs">
-        <label className="field">
-          <span className="label">Initial Amount</span>
+    <div className="investment-calc ui-stack" data-gap="lg">
+      <div className="inputs ui-grid">
+        <label className="field ui-field">
+          <span className="ui-label">Initial Amount</span>
           <div className="input-wrap">
             <span className="prefix">$</span>
             <input
@@ -225,8 +225,8 @@ export default function InvestmentCalc() {
           </div>
         </label>
 
-        <label className="field">
-          <span className="label">Annual Return</span>
+        <label className="field ui-field">
+          <span className="ui-label">Annual Return</span>
           <div className="input-wrap">
             <input
               type="text"
@@ -241,8 +241,8 @@ export default function InvestmentCalc() {
           </div>
         </label>
 
-        <label className="field">
-          <span className="label">Contribution Per {freq === "monthly" ? "Month" : "Year"}</span>
+        <label className="field ui-field">
+          <span className="ui-label">Contribution Per {freq === "monthly" ? "Month" : "Year"}</span>
           <div className="input-wrap">
             <span className="prefix">$</span>
             <input
@@ -255,26 +255,28 @@ export default function InvestmentCalc() {
               placeholder="0"
             />
           </div>
-          <div className="toggle-row" role="group" aria-label="Contribution frequency">
+          <div className="toggle-row ui-segmented" role="group" aria-label="Contribution frequency">
             <button
               type="button"
               onClick={() => setFreq("monthly")}
-              className={freq === "monthly" ? "toggle-btn is-active" : "toggle-btn"}
+              className="ui-button"
+              aria-pressed={freq === "monthly"}
             >
               Monthly
             </button>
             <button
               type="button"
               onClick={() => setFreq("yearly")}
-              className={freq === "yearly" ? "toggle-btn is-active" : "toggle-btn"}
+              className="ui-button"
+              aria-pressed={freq === "yearly"}
             >
               Yearly
             </button>
           </div>
         </label>
 
-        <label className="field">
-          <span className="label">Time Period</span>
+        <label className="field ui-field">
+          <span className="ui-label">Time Period</span>
           <div className="input-wrap">
             <input
               type="text"
@@ -290,52 +292,54 @@ export default function InvestmentCalc() {
         </label>
       </div>
 
-      <div className="timing">
-        <span className="label">Contribution Timing</span>
-        <div className="toggle-row" role="group" aria-label="Contribution timing">
+      <div className="timing ui-field">
+        <span className="ui-label">Contribution Timing</span>
+        <div className="toggle-row ui-segmented" role="group" aria-label="Contribution timing">
           <button
             type="button"
             onClick={() => setTiming("end")}
-            className={timing === "end" ? "toggle-btn is-active" : "toggle-btn"}
+            className="ui-button"
+            aria-pressed={timing === "end"}
           >
             End of period
           </button>
           <button
             type="button"
             onClick={() => setTiming("beginning")}
-            className={timing === "beginning" ? "toggle-btn is-active" : "toggle-btn"}
+            className="ui-button"
+            aria-pressed={timing === "beginning"}
           >
             Beginning of period
           </button>
         </div>
       </div>
 
-      <div className="cards">
-        <div className="card">
-          <span className="card-label">Final Balance</span>
-          <span className="card-value good">{data ? fmt(data.finalBalance) : "--"}</span>
+      <div className="cards ui-result-grid" aria-live="polite">
+        <div className="ui-stat-card">
+          <span className="ui-stat-label">Final Balance</span>
+          <span className="ui-stat-value">{data ? fmt(data.finalBalance) : "--"}</span>
         </div>
-        <div className="card">
-          <span className="card-label">Total Contributions</span>
-          <span className="card-value contrib">{data ? fmt(data.totalContributions) : "--"}</span>
+        <div className="ui-stat-card">
+          <span className="ui-stat-label">Total Contributions</span>
+          <span className="ui-stat-value">{data ? fmt(data.totalContributions) : "--"}</span>
         </div>
-        <div className="card">
-          <span className="card-label">Total Interest</span>
-          <span className="card-value accent">{data ? fmt(data.totalInterest) : "--"}</span>
+        <div className="ui-stat-card">
+          <span className="ui-stat-label">Total Interest</span>
+          <span className="ui-stat-value">{data ? fmt(data.totalInterest) : "--"}</span>
         </div>
       </div>
 
       {chartData ? (
-        <div className="chart-wrap">
+        <div className="chart-wrap ui-panel">
           <Bar data={chartData} options={chartOptions} />
         </div>
       ) : (
-        <p className="empty-note">Fill all inputs to render the graph.</p>
+        <p className="ui-empty-state">Fill all inputs to render the graph.</p>
       )}
 
       {data ? (
-        <div className="table-wrap">
-          <table className="table">
+        <div className="table-wrap ui-table-wrap">
+          <table className="table ui-table">
             <thead>
               <tr>
                 <th className="th">Year</th>

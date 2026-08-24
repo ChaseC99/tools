@@ -14,20 +14,17 @@ const DENSE_LABEL_THRESHOLD = 12;
 
 const placeholder = ["Pizza", "Sushi", "Burgers", "Tacos", "Salad"].join("\n");
 
-function getRandomUnit(): number {
-    if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
-        const values = new Uint32Array(1);
-        crypto.getRandomValues(values);
-        return values[0] / 0xffffffff;
+function generateOptionColor(option: string, index: number): string {
+    let hash = 2166136261;
+    for (const character of `${option}-${index}`) {
+        hash ^= character.charCodeAt(0);
+        hash = Math.imul(hash, 16777619);
     }
 
-    return Math.random();
-}
-
-function generateRandomColor(): string {
-    const hue = Math.floor(getRandomUnit() * 360);
-    const saturation = 65 + Math.floor(getRandomUnit() * 20);
-    const lightness = 50 + Math.floor(getRandomUnit() * 10);
+    const unsignedHash = hash >>> 0;
+    const hue = unsignedHash % 360;
+    const saturation = 65 + ((unsignedHash >>> 8) % 20);
+    const lightness = 50 + ((unsignedHash >>> 16) % 10);
     return `hsl(${hue} ${saturation}% ${lightness}%)`;
 }
 
@@ -40,7 +37,7 @@ function buildWheelGradient(optionCount: number, colors: string[]) {
     const stops = Array.from({ length: optionCount }, (_, index) => {
         const start = (index * sliceSize).toFixed(4);
         const end = ((index + 1) * sliceSize).toFixed(4);
-        const color = colors[index] ?? generateRandomColor();
+        const color = colors[index] ?? generateOptionColor(String(index), index);
         return `${color} ${start}% ${end}%`;
     }).join(", ");
 
@@ -58,7 +55,7 @@ export default function Spinner() {
     const pendingWinnerRef = useRef<number | null>(null);
 
     const options = useMemo<string[]>(() => parseOptions(inputText), [inputText]);
-    const sliceColors = useMemo<string[]>(() => options.map(() => generateRandomColor()), [options]);
+    const sliceColors = useMemo<string[]>(() => options.map(generateOptionColor), [options]);
     const canSpin = options.length >= 2 && !isSpinning;
     const sliceAngle = options.length > 0 ? 360 / options.length : 0;
     const wheelBackground = useMemo(() => buildWheelGradient(options.length, sliceColors), [options.length, sliceColors]);
@@ -172,8 +169,8 @@ export default function Spinner() {
         : null;
 
     return (
-        <section style={styles.container}>
-            <div style={styles.wheelPanel}>
+        <section className="spinner-workspace ui-workspace">
+            <div className="spinner-wheel-panel">
                 <div style={styles.pointer} aria-hidden="true" />
                 <div
                     style={{
@@ -190,18 +187,19 @@ export default function Spinner() {
                     {wheelLabels}
                 </div>
 
-                <button type="button" onClick={spin} disabled={!canSpin} style={styles.primaryButton}>
-                    {isSpinning ? "Spinning..." : "Spin"}
+                <button className="ui-button" data-size="lg" type="button" onClick={spin} disabled={!canSpin}>
+                    {isSpinning ? "Spinning…" : "Spin"}
                 </button>
 
-                <p style={styles.winnerText} aria-live="polite">
-                    {lastWinner ? `Winner: ${lastWinner}` : "Winner: -"}
+                <p className={lastWinner ? "ui-alert" : "ui-muted"} data-variant={lastWinner ? "success" : undefined} aria-live="polite">
+                    {lastWinner ? `Winner: ${lastWinner}` : "Spin to choose a winner"}
                 </p>
             </div>
 
-            <div style={styles.inputPanel}>
-                <label htmlFor="spinner-options" style={styles.labelText}>Options (one per line)</label>
+            <div className="ui-panel ui-stack">
+                <label className="ui-label" htmlFor="spinner-options">Options (one per line)</label>
                 <textarea
+                    className="ui-textarea"
                     id="spinner-options"
                     value={inputText}
                     onChange={(event) => {
@@ -211,11 +209,10 @@ export default function Spinner() {
                     }}
                     rows={8}
                     placeholder={placeholder}
-                    style={styles.textarea}
                     disabled={isSpinning}
                 />
-                <div style={styles.controlRow}>
-                    <label style={styles.toggleLabel}>
+                <div className="ui-action-bar ui-action-bar--split">
+                    <label className="ui-choice">
                         <input
                             type="checkbox"
                             checked={removeAfterSpin}
@@ -230,7 +227,7 @@ export default function Spinner() {
                         />
                         Remove winner after spin
                     </label>
-                    <button type="button" onClick={clearAll} style={styles.secondaryButton} disabled={isSpinning}>
+                    <button className="ui-button" data-variant="ghost" type="button" onClick={clearAll} disabled={isSpinning}>
                         Clear
                     </button>
                 </div>
@@ -240,77 +237,6 @@ export default function Spinner() {
 }
 
 const styles: Record<string, CSSProperties> = {
-    container: {
-        display: "flex",
-        flexDirection: "column",
-        gap: "24px",
-        alignItems: "center",
-        maxWidth: "1000px",
-        margin: "0 auto",
-        padding: "24px 16px 40px",
-        overflowX: "hidden",
-    },
-    inputPanel: {
-        display: "flex",
-        flexDirection: "column",
-        gap: "12px",
-        width: "100%",
-    },
-    labelText: {
-        fontWeight: 700,
-        color: "#0f172a",
-    },
-    textarea: {
-        width: "100%",
-        boxSizing: "border-box",
-        borderRadius: "10px",
-        border: "1px solid #cbd5e1",
-        padding: "12px",
-        fontSize: "16px",
-        lineHeight: 1.35,
-        resize: "vertical",
-        minHeight: "180px",
-        fontFamily: "inherit",
-        color: "#0f172a",
-        backgroundColor: "#ffffff",
-    },
-    controlRow: {
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: "12px",
-        flexWrap: "wrap",
-    },
-    toggleLabel: {
-        display: "inline-flex",
-        alignItems: "center",
-        gap: "8px",
-        color: "#1e293b",
-        fontSize: "15px",
-    },
-    secondaryButton: {
-        border: "1px solid #94a3b8",
-        borderRadius: "8px",
-        backgroundColor: "#f8fafc",
-        color: "#0f172a",
-        padding: "8px 14px",
-        fontWeight: 600,
-        cursor: "pointer",
-    },
-    helpText: {
-        margin: 0,
-        fontSize: "14px",
-        color: "#475569",
-        minHeight: "20px",
-    },
-    wheelPanel: {
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: "14px",
-        position: "relative",
-        width: `${WHEEL_SIZE + 16}px`,
-    },
     pointer: {
         width: 0,
         height: 0,
@@ -354,23 +280,5 @@ const styles: Record<string, CSSProperties> = {
         stroke: "#020617",
         strokeWidth: 2,
         fill: "none",
-    },
-    primaryButton: {
-        border: "none",
-        borderRadius: "999px",
-        backgroundColor: "#0f172a",
-        color: "#ffffff",
-        padding: "12px 30px",
-        fontSize: "16px",
-        fontWeight: 700,
-        width: "160px",
-        cursor: "pointer",
-    },
-    winnerText: {
-        margin: 0,
-        minHeight: "24px",
-        fontSize: "18px",
-        fontWeight: 700,
-        color: "#0f172a",
     },
 };

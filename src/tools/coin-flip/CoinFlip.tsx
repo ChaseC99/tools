@@ -58,7 +58,7 @@ export default function CoinFlip() {
     const rotationDeg = flipCount * 180;
 
     return (
-        <div style={styles.container}>
+        <section className="ui-clock ui-stack" data-gap="lg" aria-label="Coin flip">
             <div style={styles.scene}>
                 <div
                     style={{
@@ -104,26 +104,23 @@ export default function CoinFlip() {
                 </div>
             </div>
 
-            <p style={styles.resultText}>
+            <p className="ui-stat-value" aria-live="polite">
                 {result && !isFlipping
                     ? `${result === "heads" ? "Heads" : "Tails"}!`
                     : "\u00A0"}
             </p>
 
-            <button onClick={flip} disabled={isFlipping} style={styles.button}>
-                {isFlipping ? "Flipping..." : "Flip Coin"}
+            <button className="ui-button" data-size="lg" onClick={flip} disabled={isFlipping}>
+                {isFlipping ? "Flipping…" : "Flip Coin"}
             </button>
 
-            <div style={{
-                ...styles.historySection,
-                visibility: history.length > 0 ? "visible" : "hidden",
-            }}>
-                <div style={styles.tally}>
+            <div className="ui-panel ui-stack" data-gap="sm" style={{ visibility: history.length > 0 ? "visible" : "hidden" }}>
+                <div className="ui-inline coin-tally">
                     <span>H: {headsCount}</span>
-                    <span style={{ margin: "0 12px", color: "#666" }}>|</span>
+                    <span className="ui-muted" aria-hidden="true">·</span>
                     <span>T: {tailsCount}</span>
                 </div>
-                <div style={styles.chips}>
+                <div className="ui-inline coin-history" aria-label="Recent flips">
                     {history.length > 0
                         ? history.map((entry) => (
                             <span
@@ -147,21 +144,11 @@ export default function CoinFlip() {
                     }
                 </div>
             </div>
-        </div>
+        </section>
     );
 }
 
 const styles: Record<string, React.CSSProperties> = {
-    container: {
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: "20px",
-        padding: "40px 20px",
-        minHeight: "calc(100vh - 200px)",
-        fontFamily: "inherit",
-    },
     scene: {
         perspective: "800px",
         width: "160px",
@@ -211,38 +198,6 @@ const styles: Record<string, React.CSSProperties> = {
         border: "2px solid rgba(85, 85, 85, 0.4)",
         display: "flex",
         alignItems: "center",
-        justifyContent: "center",
-    },
-    resultText: {
-        fontSize: "24px",
-        fontWeight: "bold",
-        margin: 0,
-    },
-    button: {
-        padding: "12px 32px",
-        fontSize: "18px",
-        fontWeight: "bold",
-        border: "2px solid #333",
-        borderRadius: "8px",
-        backgroundColor: "#fff",
-        cursor: "pointer",
-        transition: "background-color 0.15s",
-    },
-    historySection: {
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: "10px",
-        marginTop: "10px",
-    },
-    tally: {
-        fontSize: "16px",
-        fontWeight: "bold",
-    },
-    chips: {
-        display: "flex",
-        gap: "6px",
-        flexWrap: "wrap",
         justifyContent: "center",
     },
     chip: {

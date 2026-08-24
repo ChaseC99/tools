@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { clamp, cloneImageData, loadImage, canvasToBlob, decodeHeic } from "@tools/shared/imageUtils";
-import ImageDropZone from "@tools/shared/ImageDropZone";
+import ImageInput from "@tools/shared/ImageInput";
 import ErrorMessage from "@tools/shared/ErrorMessage";
 import DownloadButton from "@tools/shared/DownloadButton";
 
@@ -554,6 +554,7 @@ export default function BlurImage() {
 
     const [dragging, setDragging] = useState(false);
     const [fileLabel, setFileLabel] = useState("");
+    const [loadingImage, setLoadingImage] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [warning, setWarning] = useState<string | null>(null);
     const [imageMeta, setImageMeta] = useState<ImageMeta | null>(null);
@@ -690,6 +691,7 @@ export default function BlurImage() {
 
         setError(null);
         setWarning(null);
+        setLoadingImage(true);
 
         try {
             let sourceBlob: Blob = file;
@@ -753,6 +755,8 @@ export default function BlurImage() {
             }
         } catch {
             setError("Could not load that image. Please try another file.");
+        } finally {
+            setLoadingImage(false);
         }
     }, []);
 
@@ -981,79 +985,34 @@ export default function BlurImage() {
     }, [blurParams, blurType, exportFormat, imageMeta, quality, regions, targetMode]);
 
     return (
-        <div style={{ maxWidth: 980, margin: "0 auto", padding: "1rem", display: "grid", gap: "1rem" }}>
-            <ImageDropZone
+        <div className="ui-stack">
+            <ImageInput
                 onFile={loadFile}
                 dragging={dragging}
                 onDraggingChange={setDragging}
                 accept="image/jpeg,image/png,image/webp,.heic,.heif"
-                theme="dark"
-                style={{
-                    padding: hasImage ? "0.75rem" : "2rem",
-                    background: dragging ? "rgba(74,144,217,0.1)" : "transparent",
-                    border: `2px dashed ${dragging ? "#4a90d9" : "#777"}`,
-                }}
-            >
-                {fileLabel ? (
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            gap: "0.75rem",
-                        }}
-                    >
-                        <p
-                            style={{
-                                margin: 0,
-                                color: "#444",
-                                fontSize: "0.95rem",
-                                textAlign: "left",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                            }}
-                        >
-                            {fileLabel}
-                        </p>
-                        <button
-                            type="button"
-                            style={{
-                                pointerEvents: "none",
-                                border: "1px solid #d0d8e5",
-                                borderRadius: 10,
-                                color: "#2f5c9a",
-                                padding: "0.35rem 0.8rem",
-                                fontSize: "0.85rem",
-                                fontWeight: 600,
-                            }}
-                        >
-                            Replace
-                        </button>
-                    </div>
-                ) : (
-                    <p style={{ margin: 0, color: "#666", fontSize: "0.95rem", wordBreak: "break-word" }}>
-                        <span>
-                            Drop an image here or click to select.
-                            <br />
-                            Supports JPG, PNG, WebP, HEIC
-                        </span>
-                    </p>
-                )}
-            </ImageDropZone>
+                formats={["JPG", "PNG", "WebP", "HEIC"]}
+                fileName={fileLabel || null}
+                loading={loadingImage}
+                loadingLabel="Loading image…"
+            />
+
+            <p className="ui-hint" style={{ textAlign: "center" }}>
+                Blur the whole image or draw regions using the controls below.
+            </p>
 
             {warning && (
-                <div style={{ background: "#fff5d6", color: "#5f4a00", padding: "0.75rem", borderRadius: 8 }}>
+                <div className="ui-alert" data-variant="warning">
                     {warning}
                 </div>
             )}
 
-            <ErrorMessage message={error} theme="light" />
+            <ErrorMessage message={error} />
 
-            <div style={{ display: "grid", gap: "0.75rem", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
-                <label style={{ display: "grid", gap: 6 }}>
-                    <span>Blur type</span>
-                    <select value={blurType} onChange={(event) => setBlurType(event.target.value as BlurType)}>
+            <div className="ui-grid">
+                <label className="ui-field">
+                    <span className="ui-label">Blur type</span>
+                    <select className="ui-select" value={blurType} onChange={(event) => setBlurType(event.target.value as BlurType)}>
                         {(Object.keys(BLUR_LABELS) as BlurType[]).map((type) => (
                             <option key={type} value={type}>
                                 {BLUR_LABELS[type]}
@@ -1062,17 +1021,17 @@ export default function BlurImage() {
                     </select>
                 </label>
 
-                <label style={{ display: "grid", gap: 6 }}>
-                    <span>Apply to</span>
-                    <select value={targetMode} onChange={(event) => setTargetMode(event.target.value as TargetMode)}>
+                <label className="ui-field">
+                    <span className="ui-label">Apply to</span>
+                    <select className="ui-select" value={targetMode} onChange={(event) => setTargetMode(event.target.value as TargetMode)}>
                         <option value="whole">Whole image</option>
                         <option value="regions">Rectangle regions</option>
                     </select>
                 </label>
 
-                <label style={{ display: "grid", gap: 6 }}>
-                    <span>Export format</span>
-                    <select value={exportFormat} onChange={(event) => setExportFormat(event.target.value as ExportFormat)}>
+                <label className="ui-field">
+                    <span className="ui-label">Export format</span>
+                    <select className="ui-select" value={exportFormat} onChange={(event) => setExportFormat(event.target.value as ExportFormat)}>
                         {(Object.keys(EXPORT_LABELS) as ExportFormat[]).map((format) => (
                             <option key={format} value={format}>
                                 {EXPORT_LABELS[format]}
@@ -1082,11 +1041,12 @@ export default function BlurImage() {
                 </label>
             </div>
 
-            <div style={{ display: "grid", gap: "0.75rem", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}>
+            <div className="ui-grid">
                 {blurType === "pixelate" ? (
-                    <label style={{ display: "grid", gap: 6 }}>
-                        <span>Block size: {Math.round(blurParams.blockSize)} px</span>
+                    <label className="ui-field">
+                        <span className="ui-label">Block size: {Math.round(blurParams.blockSize)} px</span>
                         <input
+                            className="ui-range"
                             type="range"
                             min={2}
                             max={48}
@@ -1098,9 +1058,10 @@ export default function BlurImage() {
                         />
                     </label>
                 ) : (
-                    <label style={{ display: "grid", gap: 6 }}>
-                        <span>Radius: {Math.round(blurParams.radius)} px</span>
+                    <label className="ui-field">
+                        <span className="ui-label">Radius: {Math.round(blurParams.radius)} px</span>
                         <input
+                            className="ui-range"
                             type="range"
                             min={1}
                             max={40}
@@ -1112,9 +1073,10 @@ export default function BlurImage() {
                 )}
 
                 {blurType === "motion" && (
-                    <label style={{ display: "grid", gap: 6 }}>
-                        <span>Angle: {Math.round(blurParams.angle)}°</span>
+                    <label className="ui-field">
+                        <span className="ui-label">Angle: {Math.round(blurParams.angle)}°</span>
                         <input
+                            className="ui-range"
                             type="range"
                             min={0}
                             max={180}
@@ -1126,9 +1088,10 @@ export default function BlurImage() {
                 )}
 
                 {isLossyFormat(exportFormat) && (
-                    <label style={{ display: "grid", gap: 6 }}>
-                        <span>Export quality: {Math.round(quality * 100)}%</span>
+                    <label className="ui-field">
+                        <span className="ui-label">Export quality: {Math.round(quality * 100)}%</span>
                         <input
+                            className="ui-range"
                             type="range"
                             min={0.1}
                             max={1}
@@ -1140,9 +1103,10 @@ export default function BlurImage() {
                 )}
 
                 {targetMode === "regions" && selectedRegion && (
-                    <label style={{ display: "grid", gap: 6 }}>
-                        <span>Selected region feather: {Math.round(selectedRegion.feather)} px</span>
+                    <label className="ui-field">
+                        <span className="ui-label">Selected region feather: {Math.round(selectedRegion.feather)} px</span>
                         <input
+                            className="ui-range"
                             type="range"
                             min={0}
                             max={80}
@@ -1154,27 +1118,27 @@ export default function BlurImage() {
                 )}
             </div>
 
-            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+            <div className="ui-action-bar">
                 {targetMode === "regions" && selectedRegion && (
-                    <button type="button" onClick={removeSelectedRegion}>Delete selected region</button>
+                    <button className="ui-button" data-variant="danger" type="button" onClick={removeSelectedRegion}>Delete selected region</button>
                 )}
             </div>
 
-            <div style={{ border: "1px solid #ddd", borderRadius: 8, padding: "0.75rem", background: "#fafafa" }}>
-                <p style={{ marginTop: 0, marginBottom: "0.75rem", color: "#555", fontSize: "0.9rem", textAlign: "center" }}>
+            <div className="ui-panel ui-stack" data-variant="inset">
+                <p className="ui-muted" style={{ textAlign: "center" }}>
                     {targetMode === "regions"
                         ? "Drag on the image to create a rectangle. Drag inside to move it, drag corner handles to resize. Use Delete/Backspace to remove selected region."
                         : "Blur is applied to the whole image."}
                 </p>
-                <div style={{ display: "flex", justifyContent: "center" }}>
+                <div className="blur-canvas-wrap">
                     <canvas
                         ref={displayCanvasRef}
                         onPointerDown={onCanvasPointerDown}
                         onPointerMove={onCanvasPointerMove}
                         onPointerUp={onCanvasPointerUp}
                         onPointerCancel={onCanvasPointerUp}
+                        className="blur-canvas"
                         style={{
-                            maxWidth: "100%",
                             width: imageMeta ? `${imageMeta.previewWidth}px` : "100%",
                             minHeight: hasImage ? undefined : 220,
                             background: "repeating-conic-gradient(#f3f3f3 0% 25%, #ffffff 0% 50%) 50% / 24px 24px",
@@ -1183,37 +1147,18 @@ export default function BlurImage() {
                         }}
                     />
                 </div>
-                <div style={{ display: "flex", justifyContent: "center", marginTop: "1rem" }}>
+                <div className="ui-action-bar ui-action-bar--center">
                     <DownloadButton
                         onClick={handleDownload}
                         disabled={!hasImage}
                         filename={`image-blurred`}
                         label="Download blurred image"
-                        theme="dark"
-                        style={{
-                            borderRadius: 12,
-                            padding: "0.85rem 1.8rem",
-                            fontSize: "1rem",
-                            fontWeight: 700,
-                            minWidth: 240,
-                            background: !hasImage ? "#97acc7" : "#2f80ed",
-                            backgroundColor: !hasImage ? "#97acc7" : "#2f80ed",
-                        }}
                     />
                 </div>
             </div>
 
-            <p
-                style={{
-                    color: "#888",
-                    fontSize: "0.85rem",
-                    textAlign: "center",
-                    marginBottom: "1.5rem",
-                    lineHeight: 1.5,
-                }}
-            >
-                All blurring happens in your browser — no
-                images are saved or uploaded to any server.
+            <p className="ui-hint" style={{ textAlign: "center" }}>
+                All blurring happens in your browser—no images are saved or uploaded.
             </p>
         </div>
     );

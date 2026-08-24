@@ -1,6 +1,6 @@
 <template>
-    <div class="picker-container">
-        <div class="picker-main">
+    <section class="picker-container ui-workspace" aria-label="Color picker">
+        <div class="picker-visual ui-panel ui-stack">
             <div class="spectrum-wrap">
                 <canvas
                     ref="spectrumCanvas"
@@ -9,6 +9,7 @@
                     class="spectrum"
                     @mousedown="onSpectrumMouseDown"
                     @touchstart.prevent="onSpectrumTouchStart"
+                    aria-label="Color saturation and lightness spectrum"
                 ></canvas>
                 <div
                     class="spectrum-cursor"
@@ -16,51 +17,80 @@
                 ></div>
             </div>
 
-            <input
-                type="range"
-                min="0"
-                max="360"
-                v-model.number="hue"
-                class="hue-slider"
-            />
+            <label class="ui-field hue-field">
+                <span class="ui-label">Hue <span class="ui-muted">{{ hue }}°</span></span>
+                <input
+                    type="range"
+                    min="0"
+                    max="360"
+                    v-model.number="hue"
+                    class="hue-slider ui-range"
+                />
+            </label>
         </div>
 
-        <div class="swatch" :style="{ backgroundColor: hex }"></div>
+        <div class="values ui-panel ui-stack">
+            <div class="current-color">
+                <div class="swatch" :style="{ backgroundColor: hex }" aria-hidden="true"></div>
+                <div>
+                    <span class="ui-section-label">Current color</span>
+                    <strong class="current-hex">{{ hex }}</strong>
+                </div>
+            </div>
 
-        <div class="values">
-            <div class="value-row">
-                <label>HEX</label>
-                <div class="input-with-copy">
+            <div class="value-group">
+                <label class="ui-label" for="color-hex">HEX</label>
+                <div class="value-controls">
                     <input
+                        id="color-hex"
+                        class="ui-input mono-input"
                         type="text"
                         :value="hex"
                         @input="onHexInput($event.target.value)"
                         spellcheck="false"
                         maxlength="7"
                     />
-                    <button @click="copy(hex)" class="copy-btn">{{ copyLabel === 'hex' ? 'Copied!' : 'Copy' }}</button>
+                    <button type="button" @click="copy(hex)" class="ui-button" data-variant="secondary" data-size="sm">
+                        <span aria-live="polite">{{ copyLabel === 'hex' ? 'Copied!' : 'Copy' }}</span>
+                    </button>
                 </div>
             </div>
-            <div class="value-row">
-                <label>RGB</label>
-                <div class="rgb-inputs">
-                    <input type="number" min="0" max="255" v-model.number="r" />
-                    <input type="number" min="0" max="255" v-model.number="g" />
-                    <input type="number" min="0" max="255" v-model.number="b" />
+
+            <div class="value-group">
+                <span class="ui-label">RGB</span>
+                <div class="value-controls">
+                    <div class="channel-inputs">
+                        <label class="ui-sr-only" for="color-red">Red</label>
+                        <input id="color-red" class="ui-input mono-input" type="number" min="0" max="255" v-model.number="r" />
+                        <label class="ui-sr-only" for="color-green">Green</label>
+                        <input id="color-green" class="ui-input mono-input" type="number" min="0" max="255" v-model.number="g" />
+                        <label class="ui-sr-only" for="color-blue">Blue</label>
+                        <input id="color-blue" class="ui-input mono-input" type="number" min="0" max="255" v-model.number="b" />
+                    </div>
+                    <button type="button" @click="copy(`rgb(${r}, ${g}, ${b})`)" class="ui-button" data-variant="secondary" data-size="sm">
+                        <span aria-live="polite">{{ copyLabel === 'rgb' ? 'Copied!' : 'Copy' }}</span>
+                    </button>
                 </div>
-                <button @click="copy(`rgb(${r}, ${g}, ${b})`)" class="copy-btn">{{ copyLabel === 'rgb' ? 'Copied!' : 'Copy' }}</button>
             </div>
-            <div class="value-row">
-                <label>HSL</label>
-                <div class="rgb-inputs">
-                    <input type="number" min="0" max="360" v-model.number="hue" />
-                    <input type="number" min="0" max="100" v-model.number="satPercent" />
-                    <input type="number" min="0" max="100" v-model.number="lightPercent" />
+
+            <div class="value-group">
+                <span class="ui-label">HSL</span>
+                <div class="value-controls">
+                    <div class="channel-inputs">
+                        <label class="ui-sr-only" for="color-hue">Hue</label>
+                        <input id="color-hue" class="ui-input mono-input" type="number" min="0" max="360" v-model.number="hue" />
+                        <label class="ui-sr-only" for="color-saturation">Saturation</label>
+                        <input id="color-saturation" class="ui-input mono-input" type="number" min="0" max="100" v-model.number="satPercent" />
+                        <label class="ui-sr-only" for="color-lightness">Lightness</label>
+                        <input id="color-lightness" class="ui-input mono-input" type="number" min="0" max="100" v-model.number="lightPercent" />
+                    </div>
+                    <button type="button" @click="copy(`hsl(${hue}, ${satPercent}%, ${lightPercent}%)`)" class="ui-button" data-variant="secondary" data-size="sm">
+                        <span aria-live="polite">{{ copyLabel === 'hsl' ? 'Copied!' : 'Copy' }}</span>
+                    </button>
                 </div>
-                <button @click="copy(`hsl(${hue}, ${satPercent}%, ${lightPercent}%)`)" class="copy-btn">{{ copyLabel === 'hsl' ? 'Copied!' : 'Copy' }}</button>
             </div>
         </div>
-    </div>
+    </section>
 </template>
 
 <script>
@@ -302,18 +332,15 @@ export default {
 
 <style scoped>
 .picker-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-    padding: 32px 20px;
+    grid-template-columns: minmax(320px, 0.9fr) minmax(0, 1.1fr);
 }
 
-.picker-main {
+.picker-visual {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 16px;
+    justify-content: center;
+    gap: var(--ui-space-5);
 }
 
 .spectrum-wrap {
@@ -324,8 +351,9 @@ export default {
 }
 
 .spectrum {
-    border-radius: 8px;
     display: block;
+    border-radius: var(--ui-radius-lg);
+    box-shadow: var(--ui-shadow-sm);
 }
 
 .spectrum-cursor {
@@ -339,12 +367,16 @@ export default {
     pointer-events: none;
 }
 
-.hue-slider {
+.hue-field {
     width: 280px;
+}
+
+.hue-slider {
+    width: 100%;
     height: 16px;
     -webkit-appearance: none;
     appearance: none;
-    border-radius: 8px;
+    border-radius: var(--ui-radius-pill);
     background: linear-gradient(to right,
         hsl(0,100%,50%), hsl(60,100%,50%), hsl(120,100%,50%),
         hsl(180,100%,50%), hsl(240,100%,50%), hsl(300,100%,50%), hsl(360,100%,50%)
@@ -358,92 +390,91 @@ export default {
     height: 20px;
     border-radius: 50%;
     background: #fff;
-    border: 2px solid #999;
+    border: 2px solid #777;
     cursor: pointer;
     box-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 
-.swatch {
-    width: 120px;
-    height: 60px;
-    border-radius: 12px;
-    border: 1px solid #ddd;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
-}
-
 .values {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    width: 100%;
-    max-width: 360px;
+    align-self: stretch;
+    justify-content: center;
+    gap: var(--ui-space-5);
 }
 
-.value-row {
+.current-color {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--ui-space-4);
+    padding-bottom: var(--ui-space-5);
+    border-bottom: 1px solid var(--ui-color-border);
 }
 
-.value-row label {
-    width: 36px;
-    font-weight: bold;
-    font-size: 13px;
-    flex-shrink: 0;
+.swatch {
+    width: 4.5rem;
+    height: 4.5rem;
+    flex: none;
+    border: 1px solid var(--ui-color-border);
+    border-radius: var(--ui-radius-lg);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.12);
 }
 
-.input-with-copy {
+.current-hex {
+    display: block;
+    margin-top: var(--ui-space-1);
+    font-family: var(--ui-font-mono);
+    font-size: var(--ui-font-size-xl);
+}
+
+.value-group {
+    display: grid;
+    gap: var(--ui-space-2);
+}
+
+.value-controls {
     display: flex;
-    flex: 1;
-    gap: 8px;
+    align-items: center;
+    gap: var(--ui-space-2);
 }
 
-.input-with-copy input {
-    flex: 1;
-    padding: 6px 10px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    font-family: monospace;
-    font-size: 14px;
-}
-
-.rgb-inputs {
-    display: flex;
-    gap: 4px;
+.value-controls > .ui-input,
+.channel-inputs {
+    min-width: 0;
     flex: 1;
 }
 
-.rgb-inputs input {
-    width: 52px;
-    padding: 6px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    font-family: monospace;
-    font-size: 14px;
+.channel-inputs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--ui-space-1);
+}
+
+.mono-input {
+    min-width: 0;
+    font-family: var(--ui-font-mono);
+    font-size: var(--ui-font-size-sm);
     text-align: center;
 }
 
-.copy-btn {
-    padding: 6px 10px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    background: #fff;
-    cursor: pointer;
-    font-size: 12px;
-    white-space: nowrap;
-}
-
-.copy-btn:hover {
-    background: #f0f0f0;
-}
-
-@media (max-width: 600px) {
-    .spectrum-wrap, .spectrum {
-        width: 240px;
-        height: 240px;
+@media (max-width: 760px) {
+    .picker-container {
+        grid-template-columns: 1fr;
     }
-    .hue-slider {
-        width: 240px;
+}
+
+@media (max-width: 380px) {
+    .picker-visual {
+        padding: var(--ui-space-1);
+        border-color: transparent;
+        background: transparent;
+    }
+
+    .value-controls {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .value-controls .ui-button {
+        width: 100%;
     }
 }
 </style>

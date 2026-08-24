@@ -78,6 +78,8 @@ export default function ChessClock() {
     const intervalRef = useRef<number | null>(null);
     const lastTickRef = useRef<number>(0);
     const audioCtxRef = useRef<AudioContext | null>(null);
+    const modalRef = useRef<HTMLDivElement | null>(null);
+    const modalTriggerRef = useRef<HTMLButtonElement | null>(null);
 
     const appliedStartMs = useMemo(() => settingsApplied.minutesPerSide * 60_000, [settingsApplied.minutesPerSide]);
 
@@ -189,6 +191,45 @@ export default function ChessClock() {
         };
     }, [stopTicking]);
 
+    useEffect(() => {
+        if (!showOptions && !showResetConfirm) return;
+
+        const dialog = modalRef.current;
+        const focusableSelector = "button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex='-1'])";
+        const focusableElements = dialog ? Array.from(dialog.querySelectorAll<HTMLElement>(focusableSelector)) : [];
+        const focusFrame = window.requestAnimationFrame(() => {
+            (focusableElements[0] ?? dialog)?.focus();
+        });
+
+        const onModalKeyDown = (event: KeyboardEvent) => {
+            if (event.key === "Escape") {
+                event.preventDefault();
+                setShowOptions(false);
+                setShowResetConfirm(false);
+                return;
+            }
+
+            if (event.key !== "Tab" || focusableElements.length === 0) return;
+
+            const first = focusableElements[0];
+            const last = focusableElements[focusableElements.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
+        };
+
+        document.addEventListener("keydown", onModalKeyDown);
+        return () => {
+            window.cancelAnimationFrame(focusFrame);
+            document.removeEventListener("keydown", onModalKeyDown);
+            window.requestAnimationFrame(() => modalTriggerRef.current?.focus());
+        };
+    }, [showOptions, showResetConfirm]);
+
     const onClockTap = useCallback((tappedSide: Side) => {
         if (status === "paused" || status === "gameOver") return;
 
@@ -227,18 +268,20 @@ export default function ChessClock() {
         }
     };
 
-    const onOpenOptions = () => {
+    const onOpenOptions = (event: React.MouseEvent<HTMLButtonElement>) => {
         if (status === "running") {
             setStatus("paused");
         }
+        modalTriggerRef.current = event.currentTarget;
         setSettingsDraft(settingsApplied);
         setShowOptions(true);
     };
 
-    const onOpenResetConfirm = () => {
+    const onOpenResetConfirm = (event: React.MouseEvent<HTMLButtonElement>) => {
         if (status === "running") {
             setStatus("paused");
         }
+        modalTriggerRef.current = event.currentTarget;
         setShowResetConfirm(true);
     };
 
@@ -261,8 +304,8 @@ export default function ChessClock() {
 
         return {
             ...styles.clockPanel,
-            background: isLoser ? "#fee2e2" : isActive ? "#dcfce7" : "#f8fafc",
-            borderColor: isLoser ? "#ef4444" : isActive ? "#22c55e" : "#d1d5db",
+            background: isLoser ? "var(--ui-color-danger-surface)" : isActive ? "var(--ui-color-success-surface)" : "var(--ui-color-surface-inset)",
+            borderColor: isLoser ? "var(--ui-color-danger)" : isActive ? "var(--ui-color-success)" : "var(--ui-color-border)",
             cursor: status === "paused" || status === "gameOver" ? "default" : "pointer",
             opacity: status === "paused" ? 0.9 : 1,
         };
@@ -273,7 +316,7 @@ export default function ChessClock() {
         : <span aria-hidden="true" style={styles.iconText}>⏸</span>;
 
     return (
-        <div style={styles.page}>
+        <section className="chess-clock" style={styles.page} aria-label="Chess clock">
             <div style={styles.board}>
                 <button type="button" style={clockPanelStyle("top")} onClick={() => onClockTap("top")}>
                     <span
@@ -286,20 +329,20 @@ export default function ChessClock() {
                     </span>
                 </button>
 
-                <div style={styles.controls}>
-                    <button type="button" style={styles.controlButton} onClick={onOpenResetConfirm} aria-label="Reset game">
+                <div style={styles.controls} role="toolbar" aria-label="Game controls">
+                    <button type="button" className="ui-button ui-icon-button" data-variant="secondary" onClick={onOpenResetConfirm} aria-label="Reset game">
                         ↺
                     </button>
                     <button
                         type="button"
-                        style={{ ...styles.controlButton, ...styles.primaryControl }}
+                        className="ui-button ui-icon-button"
                         onClick={onPausePlay}
                         disabled={status === "idle" || status === "gameOver"}
                         aria-label={status === "paused" ? "Resume" : "Pause"}
                     >
                         {pauseIcon}
                     </button>
-                    <button type="button" style={styles.controlButton} onClick={onOpenOptions} aria-label="Open options">
+                    <button type="button" className="ui-button ui-icon-button" data-variant="secondary" onClick={onOpenOptions} aria-label="Open options">
                         ⚙
                     </button>
                 </div>
@@ -310,15 +353,16 @@ export default function ChessClock() {
             </div>
 
             {showResetConfirm && (
-                <div style={styles.modalBackdrop} role="presentation">
-                    <div style={styles.modal} role="dialog" aria-modal="true" aria-label="Reset confirmation">
-                        <h2 style={styles.modalTitle}>Reset game?</h2>
-                        <p style={styles.modalText}>Both clocks will return to {Math.floor(appliedStartMs / 60_000)}:00.</p>
-                        <div style={styles.modalActions}>
-                            <button type="button" style={styles.modalButton} onClick={() => setShowResetConfirm(false)}>Cancel</button>
+                <div className="ui-modal-backdrop" role="presentation">
+                    <div ref={modalRef} className="ui-modal ui-stack" role="dialog" aria-modal="true" aria-label="Reset confirmation" tabIndex={-1}>
+                        <h2>Reset game?</h2>
+                        <p className="ui-muted">Both clocks will return to {Math.floor(appliedStartMs / 60_000)}:00.</p>
+                        <div className="ui-action-bar">
+                            <button className="ui-button" data-variant="secondary" type="button" onClick={() => setShowResetConfirm(false)}>Cancel</button>
                             <button
+                                className="ui-button"
+                                data-variant="danger"
                                 type="button"
-                                style={{ ...styles.modalButton, ...styles.dangerButton }}
                                 onClick={() => {
                                     setShowResetConfirm(false);
                                     resetGame();
@@ -332,13 +376,14 @@ export default function ChessClock() {
             )}
 
             {showOptions && (
-                <div style={styles.modalBackdrop} role="presentation">
-                    <div style={styles.modal} role="dialog" aria-modal="true" aria-label="Clock options">
-                        <h2 style={styles.modalTitle}>Options</h2>
+                <div className="ui-modal-backdrop" role="presentation">
+                    <div ref={modalRef} className="ui-modal ui-stack" role="dialog" aria-modal="true" aria-label="Clock options" tabIndex={-1}>
+                        <h2>Options</h2>
 
-                        <label style={styles.fieldLabel}>
-                            Time per side (minutes)
+                        <label className="ui-field">
+                            <span className="ui-label">Time per side (minutes)</span>
                             <input
+                                className="ui-input"
                                 type="number"
                                 min={1}
                                 max={180}
@@ -347,13 +392,13 @@ export default function ChessClock() {
                                     ...prev,
                                     minutesPerSide: clampMinutes(Number(e.target.value)),
                                 }))}
-                                style={styles.input}
                             />
                         </label>
 
-                        <label style={styles.fieldLabel}>
-                            Increment per move (seconds)
+                        <label className="ui-field">
+                            <span className="ui-label">Increment per move (seconds)</span>
                             <input
+                                className="ui-input"
                                 type="number"
                                 min={0}
                                 max={60}
@@ -362,11 +407,10 @@ export default function ChessClock() {
                                     ...prev,
                                     incrementSeconds: clampIncrement(Number(e.target.value)),
                                 }))}
-                                style={styles.input}
                             />
                         </label>
 
-                        <label style={styles.checkboxRow}>
+                        <label className="ui-choice">
                             <input
                                 type="checkbox"
                                 checked={settingsDraft.soundsEnabled}
@@ -378,7 +422,7 @@ export default function ChessClock() {
                             Enable sounds
                         </label>
 
-                        <label style={styles.checkboxRow}>
+                        <label className="ui-choice">
                             <input
                                 type="checkbox"
                                 checked={settingsDraft.topUpsideDown}
@@ -390,40 +434,41 @@ export default function ChessClock() {
                             Top time upside down
                         </label>
 
-                        <div style={styles.modalActions}>
-                            <button type="button" style={styles.modalButton} onClick={() => setShowOptions(false)}>Cancel</button>
-                            <button type="button" style={{ ...styles.modalButton, ...styles.primaryButton }} onClick={onSaveOptions}>Save</button>
+                        <div className="ui-action-bar">
+                            <button className="ui-button" data-variant="secondary" type="button" onClick={() => setShowOptions(false)}>Cancel</button>
+                            <button className="ui-button" type="button" onClick={onSaveOptions}>Save</button>
                         </div>
                     </div>
                 </div>
             )}
-        </div>
+        </section>
     );
 }
 
 const styles: Record<string, React.CSSProperties> = {
     page: {
-        height: "calc(100vh - 72px)",
+        height: "calc(100dvh - 4.5rem - 1px)",
+        minHeight: "30rem",
         width: "100%",
         padding: 0,
         margin: 0,
+        overflow: "hidden",
     },
     board: {
         width: "100%",
         height: "100%",
+        padding: 0,
         border: "none",
         borderRadius: 0,
         overflow: "hidden",
         display: "grid",
         gridTemplateRows: "1fr auto 1fr",
-        background: "#fff",
-        boxShadow: "0 12px 30px rgba(15, 23, 42, 0.08)",
+        background: "var(--ui-color-surface)",
+        boxShadow: "none",
     },
     clockPanel: {
         width: "100%",
         border: "none",
-        borderTop: "1px solid #d1d5db",
-        borderBottom: "1px solid #d1d5db",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -437,108 +482,24 @@ const styles: Record<string, React.CSSProperties> = {
         lineHeight: 1,
         fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace",
         fontWeight: 700,
-        color: "#0f172a",
+        color: "var(--ui-color-text)",
         letterSpacing: "0.04em",
     },
     controls: {
         display: "grid",
-        gridTemplateColumns: "1fr auto 1fr",
+        gridTemplateColumns: "repeat(3, var(--ui-control-height-md))",
         alignItems: "center",
-        gap: "0.75rem",
-        borderTop: "1px solid #d1d5db",
-        borderBottom: "1px solid #d1d5db",
-        padding: "0.6rem 0.75rem",
-        background: "#f8fafc",
-    },
-    controlButton: {
-        justifySelf: "center",
-        border: "1px solid #94a3b8",
-        background: "#fff",
-        color: "#0f172a",
-        width: "52px",
-        height: "42px",
-        borderRadius: "999px",
-        fontSize: "1.2rem",
-        fontWeight: 700,
-        cursor: "pointer",
-    },
-    primaryControl: {
-        width: "68px",
-        height: "44px",
+        justifyContent: "center",
+        gap: "var(--ui-space-4)",
+        borderTop: "1px solid var(--ui-color-border)",
+        borderBottom: "1px solid var(--ui-color-border)",
+        borderRadius: 0,
+        padding: "var(--ui-space-3) var(--ui-space-4)",
+        background: "var(--ui-color-surface-inset)",
+        boxShadow: "none",
     },
     iconText: {
         display: "inline-block",
         transform: "translateY(-1px)",
-    },
-    modalBackdrop: {
-        position: "fixed",
-        inset: 0,
-        background: "rgba(15, 23, 42, 0.4)",
-        display: "grid",
-        placeItems: "center",
-        padding: "1rem",
-        zIndex: 50,
-    },
-    modal: {
-        width: "min(420px, 100%)",
-        background: "#fff",
-        borderRadius: "12px",
-        border: "1px solid #d1d5db",
-        boxShadow: "0 12px 40px rgba(15, 23, 42, 0.2)",
-        padding: "1rem",
-        display: "grid",
-        gap: "0.9rem",
-    },
-    modalTitle: {
-        margin: 0,
-        fontSize: "1.2rem",
-        color: "#0f172a",
-    },
-    modalText: {
-        margin: 0,
-        color: "#334155",
-    },
-    fieldLabel: {
-        display: "grid",
-        gap: "0.4rem",
-        fontSize: "0.95rem",
-        color: "#334155",
-    },
-    input: {
-        border: "1px solid #cbd5e1",
-        borderRadius: "8px",
-        padding: "0.55rem 0.7rem",
-        fontSize: "1rem",
-    },
-    checkboxRow: {
-        display: "flex",
-        alignItems: "center",
-        gap: "0.5rem",
-        color: "#334155",
-    },
-    modalActions: {
-        display: "flex",
-        justifyContent: "flex-end",
-        gap: "0.6rem",
-        marginTop: "0.2rem",
-    },
-    modalButton: {
-        border: "1px solid #94a3b8",
-        background: "#fff",
-        color: "#0f172a",
-        borderRadius: "8px",
-        padding: "0.45rem 0.9rem",
-        fontWeight: 600,
-        cursor: "pointer",
-    },
-    primaryButton: {
-        borderColor: "#1d4ed8",
-        background: "#2563eb",
-        color: "#fff",
-    },
-    dangerButton: {
-        borderColor: "#dc2626",
-        background: "#ef4444",
-        color: "#fff",
     },
 };

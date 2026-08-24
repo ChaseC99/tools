@@ -1,176 +1,201 @@
 ---
 import ToolsList from "./ToolsList.astro";
 import FeedbackActions from "./FeedbackActions.astro";
+import ThemeToggle from "./ui/ThemeToggle.astro";
+
 const { title } = Astro.props;
 ---
 
-<nav class="navbar">
-    <div class="navbar-items">
-        <div class="navbar-title-wrapper">
-            <h1 class="navbar-page-title">{title}</h1>
-            <a href="/" class="navbar-tools-link" tabindex="-1">Tools</a>
+<header class="site-header">
+    <nav class="site-navbar" aria-label="Site navigation">
+        <div class="site-navbar__title-wrap">
+            <h1 class="site-navbar__title">{title}</h1>
+            <a href="/" class="site-navbar__home" tabindex="-1">Tools</a>
         </div>
-        <div class="navbar-tools-side">
-            <img
-                id='tools-dropdown'
-                src='/icons/tool.svg'
-                alt='Tools dropdown icon'
-                height=30
-                role="button"
-                tabindex="0"
-            />
+
+        <div class="site-navbar__actions">
+            <ThemeToggle />
+            <button
+                id="tools-dropdown"
+                class="ui-button ui-icon-button tools-toggle"
+                data-variant="secondary"
+                type="button"
+                aria-label="Open tools menu"
+                aria-controls="tools-drawer"
+                aria-expanded="false"
+            >
+                <img src="/icons/tool.svg" alt="" aria-hidden="true" />
+            </button>
         </div>
+    </nav>
+</header>
+
+<div id="tools-drawer" class="tools-drawer" aria-hidden="true">
+    <div class="tools-drawer__content" role="region" aria-label="Available tools">
+        <ToolsList />
+        <FeedbackActions />
     </div>
-</nav>
-<div id="tools">
-    <ToolsList />
-    <FeedbackActions />
 </div>
 
 <style>
-    .navbar {
+    .site-header {
         position: sticky;
         top: 0;
-        z-index: 100;
-        background: white;
+        z-index: var(--ui-z-header);
+        border-bottom: 1px solid var(--ui-color-border);
+        background: color-mix(in srgb, var(--ui-color-surface) 94%, transparent);
+        backdrop-filter: blur(12px);
     }
 
-    .navbar-items {
+    .site-navbar {
+        min-height: 4.5rem;
         display: flex;
-        justify-content: space-between;
         align-items: center;
-        padding: 1rem;
+        justify-content: space-between;
+        gap: var(--ui-space-4);
+        padding: var(--ui-space-3) var(--ui-space-5);
     }
 
-    .navbar-title-wrapper {
+    .site-navbar__title-wrap {
         position: relative;
+        min-width: 0;
         overflow: hidden;
     }
 
-    .navbar-page-title {
+    .site-navbar__title,
+    .site-navbar__home {
+        overflow: hidden;
         margin: 0;
-        transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
+        color: var(--ui-color-text);
+        font-size: clamp(1.25rem, 4vw, 1.65rem);
+        font-weight: 750;
+        line-height: 1.2;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        transition: opacity var(--ui-motion-base) var(--ui-ease-standard), transform var(--ui-motion-base) var(--ui-ease-standard);
     }
 
-    .navbar-page-title.slide-out {
-        transform: translateX(-120%);
+    .site-navbar__title.is-hidden {
         opacity: 0;
+        transform: translateX(-1rem);
     }
 
-    .navbar-tools-link {
+    .site-navbar__home {
         position: absolute;
         inset: 0;
         display: flex;
         align-items: center;
-        font-size: 2em;
-        font-weight: bold;
         text-decoration: none;
-        color: inherit;
-        transform: translateY(-100%);
         opacity: 0;
         pointer-events: none;
-        transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
+        transform: translateY(-0.75rem);
     }
 
-    .navbar-tools-link.drop-in {
-        transform: translateY(0);
+    .site-navbar__home.is-visible {
         opacity: 1;
         pointer-events: auto;
+        transform: translateY(0);
     }
 
-    .navbar-tools-side {
+    .site-navbar__actions {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: var(--ui-space-2);
+        flex: none;
     }
 
-    #search {
-        padding: 0.5rem;
-        border-radius: 0 8px 8px 0;
-        border: 1px solid #ccc;
-        border-left: none;
-
-        border-color: transparent;
-
-        width: 0;
-        visibility: hidden;
-        transition: width 0.2s ease-in-out, visibility 0.2s ease-in-out, border-color 0.25s ease-in-out;
+    .tools-toggle img {
+        width: 1.35rem;
+        height: 1.35rem;
+        transition: transform var(--ui-motion-base) var(--ui-ease-standard);
     }
 
-    #search.show {
-        width: 200px;
-
-        /* Hide search bar until functionality is ready */
-        visibility: hidden;
-
-        border-radius: 8px;
-        border-left: 1px solid #ccc;
-
-        border-color: #ccc;
-
-        transition: width 0.2s ease-in-out, visibility 0.2s ease-in-out, border-color 0.25s ease-in-out;
+    :global([data-theme="dark"]) .tools-toggle img {
+        filter: invert(1);
     }
 
-    #tools-dropdown {
-        cursor: pointer;
-        transition: transform 0.3s ease-in-out;
-    }
-
-    #tools-dropdown.expanded {
+    .tools-toggle[aria-expanded="true"] img {
         transform: rotate(-90deg);
     }
 
-    #tools {
+    .tools-drawer {
         position: fixed;
         inset: 0;
-        background: white;
-        z-index: 50;
+        z-index: var(--ui-z-drawer);
         overflow-y: auto;
-        padding-top: 75px;
-        box-sizing: border-box;
-
+        padding: 6rem var(--ui-space-5) var(--ui-space-8);
+        background: var(--ui-color-page);
         opacity: 0;
         visibility: hidden;
-        transform: translateY(-12px);
-        transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out, visibility 0s 0.3s;
+        transform: translateY(-0.75rem);
+        transition: opacity var(--ui-motion-base) var(--ui-ease-standard), transform var(--ui-motion-base) var(--ui-ease-standard), visibility 0s var(--ui-motion-base);
     }
 
-    #tools.show {
+    .tools-drawer.is-open {
         opacity: 1;
         visibility: visible;
         transform: translateY(0);
-        transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out, visibility 0s;
+        transition: opacity var(--ui-motion-base) var(--ui-ease-standard), transform var(--ui-motion-base) var(--ui-ease-standard), visibility 0s;
+    }
+
+    .tools-drawer__content {
+        width: min(100%, var(--ui-content-wide));
+        margin-inline: auto;
+    }
+
+    @media (max-width: 520px) {
+        .site-navbar {
+            padding-inline: var(--ui-space-4);
+        }
+
+        .tools-drawer {
+            padding-inline: var(--ui-space-4);
+        }
     }
 </style>
 
 <script>
-    const dropdown = document.getElementById('tools-dropdown');
+    const toolsToggle = document.getElementById("tools-dropdown") as HTMLButtonElement | null;
+    const toolsDrawer = document.getElementById("tools-drawer") as HTMLElement | null;
+    const pageContent = document.getElementById("page-content") as HTMLElement | null;
+    const pageTitle = document.querySelector(".site-navbar__title") as HTMLElement | null;
+    const homeLink = document.querySelector(".site-navbar__home") as HTMLAnchorElement | null;
+    const isHome = window.location.pathname === "/";
 
-    const toggleDropdown = () => {
-        const isOpen = document.getElementById('tools').classList.toggle('show');
-        document.getElementById('tools-dropdown').classList.toggle('expanded');
-        
-        const pageTitle = document.querySelector('.navbar-page-title');
-        const toolsLink = document.querySelector('.navbar-tools-link') as HTMLElement;
-        const isHome = window.location.pathname === '/';
+    const setDrawerOpen = (open: boolean) => {
+        if (!toolsToggle || !toolsDrawer) return;
 
-        if (isOpen) {
-            if (!isHome) {
-                pageTitle.classList.add('slide-out');
-                toolsLink.classList.add('drop-in');
-                toolsLink.tabIndex = 0;
-            }
-            document.body.style.overflow = 'hidden';
+        toolsToggle.ariaExpanded = String(open);
+        toolsToggle.setAttribute("aria-label", open ? "Close tools menu" : "Open tools menu");
+        toolsDrawer.classList.toggle("is-open", open);
+        toolsDrawer.setAttribute("aria-hidden", String(!open));
+        document.body.classList.toggle("ui-scroll-locked", open);
+
+        if (pageContent) pageContent.inert = open;
+
+        if (!isHome) {
+            pageTitle?.classList.toggle("is-hidden", open);
+            homeLink?.classList.toggle("is-visible", open);
+            if (homeLink) homeLink.tabIndex = open ? 0 : -1;
+        }
+
+        if (open) {
+            window.requestAnimationFrame(() => {
+                toolsDrawer.querySelector<HTMLAnchorElement>("a")?.focus();
+            });
         } else {
-            pageTitle.classList.remove('slide-out');
-            toolsLink.classList.remove('drop-in');
-            toolsLink.tabIndex = -1;
-            document.body.style.overflow = '';
+            toolsToggle.focus();
         }
     };
 
-    dropdown.addEventListener('click', toggleDropdown);
-    dropdown.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') { toggleDropdown(); }
+    toolsToggle?.addEventListener("click", () => {
+        setDrawerOpen(toolsToggle.ariaExpanded !== "true");
+    });
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && toolsToggle?.ariaExpanded === "true") {
+            event.preventDefault();
+            setDrawerOpen(false);
+        }
     });
 </script>

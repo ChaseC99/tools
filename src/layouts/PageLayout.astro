@@ -1,12 +1,32 @@
 ---
 import Navbar from '@components/Navbar.astro';
 import PostHog from '@components/posthog.astro';
+import '../styles/tokens.css';
+import '../styles/base.css';
+import '../styles/components.css';
 
-const { title, description } = Astro.props;
+type Props = {
+    title: string;
+    description: string;
+    fullBleed?: boolean;
+};
+
+const { title, description, fullBleed = false } = Astro.props;
 ---
-<html lang="en">
+<html lang="en" data-theme="light">
     <head>
         <meta charset="utf-8" />
+        <script is:inline>
+            (() => {
+                try {
+                    const savedTheme = localStorage.getItem("tools-theme");
+                    const preferredTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+                    document.documentElement.dataset.theme = savedTheme === "dark" || savedTheme === "light" ? savedTheme : preferredTheme;
+                } catch {
+                    document.documentElement.dataset.theme = "light";
+                }
+            })();
+        </script>
         <link rel="icon" href="/favicon.ico" />
         <meta name="viewport" content="width=device-width" />
         <meta name="generator" content={Astro.generator} />
@@ -16,19 +36,32 @@ const { title, description } = Astro.props;
     </head>
     <body>
         <Navbar title={title}/>
-        <slot />
+        <main id="page-content" class:list={{ "is-full-bleed": fullBleed }}>
+            <slot />
+        </main>
     </body>
 </html>
 
-<style is:global>
-    body {
-        font-family: system-ui, sans-serif;
-        margin: 0;
-    }
-</style>
-
 <style>
-    h1 {
-        text-align: center;
+    #page-content {
+        width: 100%;
+        max-width: var(--ui-content-wide);
+        margin-inline: auto;
+        padding: var(--ui-space-6) var(--ui-space-5) var(--ui-space-12);
+    }
+
+    #page-content.is-full-bleed {
+        max-width: none;
+        padding: 0;
+    }
+
+    @media (max-width: 760px) {
+        #page-content {
+            padding: var(--ui-space-5) var(--ui-space-4) var(--ui-space-10);
+        }
+
+        #page-content.is-full-bleed {
+            padding: 0;
+        }
     }
 </style>

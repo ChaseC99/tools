@@ -1,8 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import ImageDropZone from "@tools/shared/ImageDropZone.tsx";
+import ImageInput from "@tools/shared/ImageInput.tsx";
 import DownloadButton from "@tools/shared/DownloadButton.tsx";
 import ErrorMessage from "@tools/shared/ErrorMessage.tsx";
-import Spinner from "@tools/shared/Spinner.tsx";
 import { loadImage, decodeHeic } from "@tools/shared/imageUtils.ts";
 import { extractPalette, type RGB } from "./medianCut.ts";
 
@@ -48,6 +47,7 @@ export default function ColorPalette() {
     const [paletteSize, setPaletteSize] = useState(5);
     const [colorFormat, setColorFormat] = useState<ColorFormat>("hex");
     const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+    const [copiedCss, setCopiedCss] = useState(false);
     const [palettePngUrl, setPalettePngUrl] = useState<string | null>(null);
 
     const analysisDataRef = useRef<ImageData | null>(null);
@@ -170,6 +170,8 @@ export default function ColorPalette() {
         );
         const css = `:root {\n${lines.join("\n")}\n}`;
         navigator.clipboard.writeText(css);
+        setCopiedCss(true);
+        setTimeout(() => setCopiedCss(false), 1500);
     }, [palette, colorFormat]);
 
     useEffect(() => {
@@ -182,45 +184,22 @@ export default function ColorPalette() {
     const formats: ColorFormat[] = ["hex", "rgb", "hsl"];
 
     return (
-        <div style={styles.container}>
-            {/* Upload */}
-            {!file ? (
-                <ImageDropZone onFile={handleFile} dragging={dragging} onDraggingChange={setDragging} accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml,.heic,.heif">
-                    <p style={styles.dropText}>Drop an image here or click to upload</p>
-                    <p style={styles.dropSubtext}>PNG, JPG, WebP, GIF, SVG, HEIC</p>
-                </ImageDropZone>
-            ) : (
-                <div style={styles.fileRow}>
-                    <span style={styles.fileName}>{file.name}</span>
-                    <button
-                        type="button"
-                        style={styles.replaceBtn}
-                        onClick={() => {
-                            setFile(null);
-                            setPalette([]);
-                            setPalettePngUrl(null);
-                            analysisDataRef.current = null;
-                            if (imagePreviewUrl) {
-                                URL.revokeObjectURL(imagePreviewUrl);
-                                setImagePreviewUrl(null);
-                            }
-                        }}
-                    >
-                        Replace
-                    </button>
-                </div>
-            )}
+        <div className="ui-stack">
+            <ImageInput
+                onFile={handleFile}
+                dragging={dragging}
+                onDraggingChange={setDragging}
+                accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml,.heic,.heif"
+                formats={["PNG", "JPG", "WebP", "GIF", "SVG", "HEIC"]}
+                fileName={file?.name}
+                previewUrl={imagePreviewUrl}
+                loading={processing}
+                loadingLabel="Analyzing image…"
+            />
 
             <ErrorMessage message={error} />
 
-            <p style={styles.privacy}>All processing happens in your browser. No images are saved or uploaded to any server.</p>
-
-            {processing && (
-                <div style={styles.spinnerWrap}>
-                    <Spinner size={28} />
-                    <span style={{ marginLeft: 8, color: "#555" }}>Analyzing image...</span>
-                </div>
-            )}
+            <p className="ui-hint" style={{ textAlign: "center" }}>All processing happens in your browser. No images are saved or uploaded.</p>
 
             {/* Preview + Controls */}
             {imagePreviewUrl && palette.length > 0 && (
@@ -231,28 +210,26 @@ export default function ColorPalette() {
                         style={styles.preview}
                     />
 
-                    <div style={styles.controls}>
-                        <label style={styles.sliderLabel}>
-                            Colors: {paletteSize}
+                    <div className="ui-action-bar ui-action-bar--split">
+                        <label className="ui-field">
+                            <span className="ui-label">Colors: {paletteSize}</span>
                             <input
+                                className="ui-range"
                                 type="range"
                                 min={3}
                                 max={10}
                                 value={paletteSize}
                                 onChange={handleSliderChange}
-                                style={styles.slider}
                             />
                         </label>
 
-                        <div style={styles.formatGroup}>
+                        <div className="ui-segmented" role="group" aria-label="Color format">
                             {formats.map((fmt) => (
                                 <button
                                     key={fmt}
                                     type="button"
-                                    style={{
-                                        ...styles.formatBtn,
-                                        ...(colorFormat === fmt ? styles.formatBtnActive : {}),
-                                    }}
+                                    className="ui-button"
+                                    aria-pressed={colorFormat === fmt}
                                     onClick={() => setColorFormat(fmt)}
                                 >
                                     {fmt.toUpperCase()}
@@ -262,7 +239,7 @@ export default function ColorPalette() {
                     </div>
 
                     {/* Swatches */}
-                    <div style={styles.swatchRow}>
+                    <div className="ui-selectable-grid">
                         {palette.map((rgb, i) => {
                             const bg = rgbToHex(rgb);
                             const fg = getContrastColor(rgb);
@@ -288,17 +265,17 @@ export default function ColorPalette() {
                     </div>
 
                     {/* Export actions */}
-                    <div style={styles.actions}>
+                    <div className="ui-action-bar">
                         <DownloadButton
                             href={palettePngUrl}
                             filename="palette.png"
                             label="Download PNG"
                         />
-                        <button type="button" style={styles.cssBtn} onClick={handleCopyCss}>
+                        <button type="button" className="ui-button" data-variant="secondary" onClick={handleCopyCss}>
                             <svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 -960 960 960" width="18" fill="currentColor">
                                 <path d="M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z" />
                             </svg>
-                            Copy CSS Variables
+                            {copiedCss ? "Copied CSS!" : "Copy CSS Variables"}
                         </button>
                     </div>
                 </>
@@ -308,106 +285,13 @@ export default function ColorPalette() {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-    container: {
-        padding: "24px 20px",
-        maxWidth: "720px",
-        margin: "0 auto",
-        display: "flex",
-        flexDirection: "column",
-        gap: "16px",
-    },
-    dropText: {
-        margin: "8px 0 4px",
-        fontSize: "16px",
-        color: "#333",
-    },
-    dropSubtext: {
-        margin: 0,
-        fontSize: "13px",
-        color: "#888",
-    },
-    fileRow: {
-        display: "flex",
-        alignItems: "center",
-        gap: "12px",
-        padding: "10px 14px",
-        background: "#f8fafc",
-        borderRadius: "8px",
-        border: "1px solid #d0d7de",
-    },
-    fileName: {
-        flex: 1,
-        fontSize: "14px",
-        color: "#333",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        whiteSpace: "nowrap",
-    },
-    replaceBtn: {
-        padding: "6px 14px",
-        border: "1px solid #ccc",
-        borderRadius: "6px",
-        background: "#fff",
-        cursor: "pointer",
-        fontSize: "13px",
-    },
-    spinnerWrap: {
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "20px 0",
-    },
     preview: {
         maxWidth: "100%",
         maxHeight: "400px",
         objectFit: "contain",
         borderRadius: "8px",
-        border: "1px solid #e5e7eb",
+        border: "1px solid var(--ui-color-border)",
         alignSelf: "center",
-    },
-    controls: {
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        flexWrap: "wrap",
-        gap: "12px",
-    },
-    sliderLabel: {
-        display: "flex",
-        alignItems: "center",
-        gap: "10px",
-        fontSize: "14px",
-        fontWeight: 600,
-        color: "#333",
-    },
-    slider: {
-        width: "140px",
-        cursor: "pointer",
-    },
-    formatGroup: {
-        display: "flex",
-        borderRadius: "6px",
-        overflow: "hidden",
-        border: "1px solid #ccc",
-    },
-    formatBtn: {
-        padding: "6px 14px",
-        border: "none",
-        borderRight: "1px solid #ccc",
-        background: "#fff",
-        cursor: "pointer",
-        fontSize: "13px",
-        fontWeight: 600,
-        color: "#555",
-    },
-    formatBtnActive: {
-        background: "#4a90d9",
-        color: "#fff",
-    },
-    swatchRow: {
-        display: "flex",
-        flexWrap: "wrap",
-        gap: "8px",
     },
     swatch: {
         flex: "1 1 70px",
@@ -430,29 +314,5 @@ const styles: Record<string, React.CSSProperties> = {
         wordBreak: "break-all",
         textAlign: "center",
         lineHeight: 1.2,
-    },
-    actions: {
-        display: "flex",
-        gap: "10px",
-        flexWrap: "wrap",
-    },
-    cssBtn: {
-        display: "inline-flex",
-        alignItems: "center",
-        gap: "0.4rem",
-        padding: "0.55rem 1rem",
-        borderRadius: "8px",
-        border: "1px solid #4a90d9",
-        background: "#fff",
-        color: "#4a90d9",
-        cursor: "pointer",
-        fontSize: "0.95rem",
-        fontWeight: 500,
-    },
-    privacy: {
-        margin: 0,
-        fontSize: "12px",
-        color: "#999",
-        textAlign: "center",
     },
 };

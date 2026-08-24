@@ -31,15 +31,14 @@ const tools = [
 ];
 ---
 
-<div>
+<div class="tools-grid">
     {tools.map((tool) => <ToolTile name={tool.name} id={tool.id} href={tool.href} icon={tool.icon} />)}
 </div>
 
 <style>
-    div {
+    .tools-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 4px;
-        justify-content: center;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+        gap: var(--ui-space-3);
     }
 </style>

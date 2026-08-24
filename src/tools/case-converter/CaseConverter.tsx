@@ -12,81 +12,32 @@ export default function CaseConverter() {
     };
 
     return (
-        <div style={styles.container}>
-            <textarea
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                placeholder="Type or paste text here..."
-                style={styles.textarea}
-                spellCheck={false}
-            />
-            <div style={styles.buttons}>
-                <div style={styles.buttonGroup}>
-                    <button style={styles.btn} onClick={() => setText(text.toUpperCase())}>
+        <section className="ui-stack" aria-label="Case converter">
+            <label className="ui-field">
+                <span className="ui-label">Text</span>
+                <textarea
+                    className="ui-textarea ui-code-input"
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    placeholder="Type or paste text here…"
+                    spellCheck={false}
+                />
+            </label>
+            <div className="ui-action-bar ui-action-bar--split">
+                <div className="ui-inline">
+                    <button className="ui-button" data-variant="secondary" onClick={() => setText(text.toUpperCase())}>
                         UPPERCASE
                     </button>
-                    <button style={styles.btn} onClick={() => setText(text.toLowerCase())}>
+                    <button className="ui-button" data-variant="secondary" onClick={() => setText(text.toLowerCase())}>
                         lowercase
                     </button>
                 </div>
-                <button style={styles.copyBtn} onClick={copy} disabled={!text}>
-                    <img src="/icons/copy.svg" alt="Copy" />
+                <button className="ui-button" onClick={copy} disabled={!text}>
+                    <img className="ui-button-icon" src="/icons/copy.svg" alt="" aria-hidden="true" />
                     {copied ? "Copied!" : "Copy"}
                 </button>
             </div>
-        </div>
+            <span className="ui-sr-only" role="status" aria-live="polite">{copied ? "Text copied" : ""}</span>
+        </section>
     );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-    container: {
-        padding: "24px 20px",
-        maxWidth: "700px",
-        margin: "0 auto",
-        display: "flex",
-        flexDirection: "column",
-        gap: "16px",
-    },
-    textarea: {
-        width: "100%",
-        minHeight: "250px",
-        padding: "12px",
-        fontFamily: "monospace",
-        fontSize: "14px",
-        border: "1px solid #ccc",
-        borderRadius: "8px",
-        resize: "vertical",
-        boxSizing: "border-box",
-    },
-    buttonGroup: {
-        display: "flex",
-        gap: "8px",
-        flexWrap: "wrap",
-    },
-    buttons: {
-        display: "flex",
-        gap: "8px",
-        justifyContent: "space-between",
-    },
-    btn: {
-        padding: "8px 20px",
-        border: "1px solid #ccc",
-        borderRadius: "6px",
-        background: "#fff",
-        cursor: "pointer",
-        fontSize: "14px",
-        fontWeight: "bold",
-    },
-    copyBtn: {
-        padding: "8px 20px",
-        border: "1px solid #ccc",
-        borderRadius: "6px",
-        background: "#fff",
-        cursor: "pointer",
-        fontSize: "14px",
-        fontWeight: "bold",
-        display: "flex",
-        alignItems: "center",
-        gap: "8px",
-    },
-};

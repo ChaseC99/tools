@@ -190,19 +190,18 @@ export default function Timer() {
     };
 
     return (
-        <div style={styles.container}>
-            <div style={{
-                ...styles.ringWrap,
+        <section className="ui-clock ui-stack" data-gap="lg" aria-label="Countdown timer">
+            <div className="ui-timer-ring" style={{
                 width: ringSize,
                 height: ringSize,
                 animation: finished ? "timerFlash 0.4s ease-in-out 4" : "none",
             }}>
                 <svg width={ringSize} height={ringSize} viewBox={`0 0 ${ringSize} ${ringSize}`}>
-                    <circle cx={ringSize / 2} cy={ringSize / 2} r={ringRadius} fill="none" stroke="#e5e7eb" strokeWidth="10" />
+                    <circle cx={ringSize / 2} cy={ringSize / 2} r={ringRadius} fill="none" stroke="var(--ui-color-border)" strokeWidth="10" />
                     <circle
                         cx={ringSize / 2} cy={ringSize / 2} r={ringRadius}
                         fill="none"
-                        stroke={finished ? "#22c55e" : "#4f8cff"}
+                        stroke={finished ? "var(--ui-color-success)" : "var(--ui-color-text)"}
                         strokeWidth="10"
                         strokeLinecap="round"
                         strokeDasharray={circumference}
@@ -211,65 +210,64 @@ export default function Timer() {
                         style={{ transition: running ? "stroke-dashoffset 0.25s linear" : "none" }}
                     />
                 </svg>
-                <div style={styles.timeOverlay}>
+                <output className="ui-timer-ring__time" aria-live="off">
                     {isActive
                         ? `${pad(displayH)}:${pad(displayM)}:${pad(displayS)}`
                         : `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
                     }
-                </div>
+                </output>
             </div>
 
             {!isActive && (
-                <div style={styles.inputs}>
-                    <label style={styles.inputGroup}>
+                <div className="ui-inline ui-timer-inputs">
+                    <label className="ui-field ui-timer-input">
+                        <span className="ui-label">Hours</span>
                         <input
+                            className="ui-input"
                             type="number" min={0} max={99}
                             value={hours} onChange={(e) => setHours(Math.max(0, +e.target.value))}
-                            style={styles.numInput}
                         />
-                        <span style={styles.inputLabel}>hr</span>
                     </label>
-                    <label style={styles.inputGroup}>
+                    <label className="ui-field ui-timer-input">
+                        <span className="ui-label">Minutes</span>
                         <input
+                            className="ui-input"
                             type="number" min={0} max={59}
                             value={minutes} onChange={(e) => setMinutes(Math.min(59, Math.max(0, +e.target.value)))}
-                            style={styles.numInput}
                         />
-                        <span style={styles.inputLabel}>min</span>
                     </label>
-                    <label style={styles.inputGroup}>
+                    <label className="ui-field ui-timer-input">
+                        <span className="ui-label">Seconds</span>
                         <input
+                            className="ui-input"
                             type="number" min={0} max={59}
                             value={seconds} onChange={(e) => setSeconds(Math.min(59, Math.max(0, +e.target.value)))}
-                            style={styles.numInput}
                         />
-                        <span style={styles.inputLabel}>sec</span>
                     </label>
                 </div>
             )}
 
-            <div style={styles.buttons}>
+            <div className="ui-action-bar ui-action-bar--center">
                 {!running ? (
-                    <button onClick={start} disabled={!isActive && inputTotal <= 0} style={styles.button}>
+                    <button className="ui-button" data-size="lg" onClick={start} disabled={!isActive && inputTotal <= 0}>
                         {isActive ? "Resume" : "Start"}
                     </button>
                 ) : (
-                    <button onClick={pause} style={styles.button}>Pause</button>
+                    <button className="ui-button" data-size="lg" onClick={pause}>Pause</button>
                 )}
-                <button onClick={reset} style={{ ...styles.button, ...styles.resetButton }}>Reset</button>
+                <button className="ui-button" data-size="lg" data-variant="ghost" onClick={reset}>Reset</button>
             </div>
 
-            <div style={styles.toneSection}>
-                <span style={styles.toneLabel}>Alarm tone</span>
-                <div style={styles.tonePills}>
+            <div className="ui-field ui-self-center">
+                <span className="ui-label">Alarm tone</span>
+                <div className="ui-segmented" role="group" aria-label="Alarm tone">
                     {TONES.map((t) => (
                         <button
+                            type="button"
+                            className="ui-button"
                             key={t.id}
                             onClick={() => previewTone(t.id)}
-                            style={tone === t.id
-                                ? { ...styles.tonePill, ...styles.tonePillActive }
-                                : styles.tonePill
-                            }
+                            aria-pressed={tone === t.id}
                         >
                             {t.label}
                         </button>
@@ -283,97 +281,6 @@ export default function Timer() {
                     50% { opacity: 0.3; }
                 }
             `}</style>
-        </div>
+        </section>
     );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-    container: {
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: "28px",
-        minHeight: "calc(100vh - 80px)",
-    },
-    ringWrap: {
-        position: "relative",
-    },
-    timeOverlay: {
-        position: "absolute",
-        top: 0, left: 0, right: 0, bottom: 0,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: "48px",
-        fontWeight: "bold",
-        fontFamily: "monospace",
-    },
-    inputs: {
-        display: "flex",
-        gap: "16px",
-    },
-    inputGroup: {
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: "4px",
-    },
-    numInput: {
-        width: "64px",
-        height: "48px",
-        fontSize: "22px",
-        textAlign: "center",
-        border: "1px solid #ccc",
-        borderRadius: "8px",
-    },
-    inputLabel: {
-        fontSize: "12px",
-        color: "#888",
-    },
-    buttons: {
-        display: "flex",
-        gap: "12px",
-    },
-    button: {
-        padding: "12px 32px",
-        fontSize: "18px",
-        fontWeight: "bold",
-        border: "2px solid #333",
-        borderRadius: "8px",
-        backgroundColor: "#fff",
-        cursor: "pointer",
-    },
-    resetButton: {
-        borderColor: "#999",
-        color: "#666",
-    },
-    toneSection: {
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: "8px",
-    },
-    toneLabel: {
-        fontSize: "13px",
-        color: "#888",
-    },
-    tonePills: {
-        display: "flex",
-        gap: "6px",
-    },
-    tonePill: {
-        padding: "6px 14px",
-        fontSize: "13px",
-        border: "1px solid #ddd",
-        borderRadius: "20px",
-        background: "#fff",
-        cursor: "pointer",
-        color: "#555",
-    },
-    tonePillActive: {
-        background: "#333",
-        color: "#fff",
-        borderColor: "#333",
-    },
-};

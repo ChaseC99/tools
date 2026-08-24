@@ -1,12 +1,10 @@
 <script>
     let feet;
     let inches;
-
-    $: height = feet * 12 + inches;
     let weight;
 
+    $: height = feet * 12 + inches;
     $: infoInputted = !!height && !!weight;
-
     $: bmi = (weight / (height * height)) * 703;
 
     $: isUnderweight = bmi < 18.5 && infoInputted;
@@ -19,12 +17,14 @@
     }
 </script>
 
-<main>
-    <div class="row">
-        <div class="input-section">
-            Height
-            <div id="height-inputs">
+<section class="bmi-calculator ui-stack" data-gap="lg" aria-label="BMI calculator">
+    <div class="ui-panel bmi-inputs">
+        <div class="ui-field">
+            <span class="ui-label">Height</span>
+            <div class="height-inputs">
+                <label class="ui-sr-only" for="feet">Height in feet</label>
                 <input
+                    class="ui-input measurement-input"
                     type="number"
                     id="feet"
                     placeholder="ft"
@@ -33,7 +33,9 @@
                     on:focus={selectText}
                 />
 
+                <label class="ui-sr-only" for="inches">Additional height in inches</label>
                 <input
+                    class="ui-input measurement-input"
                     type="number"
                     id="inches"
                     placeholder="in"
@@ -45,9 +47,10 @@
             </div>
         </div>
 
-        <div class="input-section">
-            Weight
+        <label class="ui-field" for="weight">
+            <span class="ui-label">Weight</span>
             <input
+                class="ui-input measurement-input"
                 type="number"
                 id="weight"
                 placeholder="lbs"
@@ -55,166 +58,157 @@
                 bind:value={weight}
                 on:focus={selectText}
             />
+        </label>
+
+        <div class="ui-result-card bmi-result" aria-live="polite">
+            <span class="ui-stat-label">Your BMI</span>
+            <strong class="bmi-value">{infoInputted ? bmi.toFixed(2) : "—"}</strong>
+            <span class="ui-muted">US customary units</span>
+        </div>
+    </div>
+
+    <section class="ui-panel ui-stack" aria-labelledby="bmi-ranges-title">
+        <div class="ui-section-header">
+            <h2 id="bmi-ranges-title">BMI ranges</h2>
+            <span class="ui-muted">For adults</span>
         </div>
 
-        <div class="input-section">
-            BMI
-            <div id="bmi">
-                {infoInputted ? bmi.toFixed(2) : "__.__"}
+        <div class="bmi-ranges">
+            <div class:active={isUnderweight} class="bmi-range bmi-range--warning">
+                <strong>Underweight</strong>
+                <span>&lt; 18.5</span>
+            </div>
+            <div class:active={isNormalWeight} class="bmi-range bmi-range--success">
+                <strong>Normal weight</strong>
+                <span>18.5–24.9</span>
+            </div>
+            <div class:active={isOverweight} class="bmi-range bmi-range--warning">
+                <strong>Overweight</strong>
+                <span>25–29.9</span>
+            </div>
+            <div class:active={isObese} class="bmi-range bmi-range--danger">
+                <strong>Obesity</strong>
+                <span>30+</span>
             </div>
         </div>
-    </div>
-
-    <div class="bmi-table">
-        <!-- bmi categories -->
-        <div class="table-row">
-            <b>BMI</b>
-            <span class:warn-color={isUnderweight}>
-                &lt; 18.5
-            </span>
-            <span class:good-color={isNormalWeight}>
-                18.5 - 24.9
-            </span>
-            <span class:warn-color={isOverweight}>
-                25 - 29.9
-            </span>
-            <span class:danger-color={isObese}>
-                &gt; 30
-            </span>
-        </div>
-        <div class="table-row">
-            <b>Category</b>
-            <span class:warn-color={isUnderweight}>
-                Underweight
-            </span>
-            <span class:good-color={isNormalWeight}>
-                Normal weight
-            </span>
-            <span class:warn-color={isOverweight}>
-                Overweight
-            </span>
-            <span class:danger-color={isObese}>
-                Obesity
-            </span>
-        </div>
-    </div>
-</main>
+    </section>
+</section>
 
 <style>
-    main {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
+    .bmi-inputs {
+        display: grid;
+        grid-template-columns: 1fr 1fr minmax(150px, 0.8fr);
+        align-items: end;
+        gap: var(--ui-space-5);
     }
 
-    .row {
-        display: flex;
-        align-items: center;
-        gap: 5rem;
-
-        margin: 2rem 0;
+    .height-inputs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--ui-space-2);
     }
 
-    .warn-color {
-        color: #f68e48;
+    .measurement-input {
+        min-width: 0;
+        font-size: var(--ui-font-size-lg);
+        font-variant-numeric: tabular-nums;
     }
 
-    .good-color {
-        color: #0c0;
-    }
-
-    .danger-color {
-        color: #d00;
-    }
-
-    #bmi {
-        margin-bottom: 1rem;
-        padding-left: 0.5rem;
-        width: 3.5rem;
-        height: 3rem;
-        font-size: larger;
-        border-radius: 0;
-        border: 1px solid #ccc;
-
-        display: flex;
-        align-items: center;
-    }
-
-    input {
-        margin-bottom: 1rem;
-        padding-left: 0.5rem;
-        width: 3rem;
-        height: 3rem;
-        font-size: larger;
-        border-radius: 0;
-        border: 1px solid #ccc;
-    }
-
-    input:focus {
-        outline: none;
-    }
-
-    #height-inputs {
-        display: flex;
-        justify-content: space-between;
-    }
-
-    .input-section {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-    }
-
-    /* Hide number input up/down arrows */
-    input::-webkit-outer-spin-button,
-    input::-webkit-inner-spin-button {
-        /* display: none; <- Crashes Chrome on hover */
+    .measurement-input::-webkit-outer-spin-button,
+    .measurement-input::-webkit-inner-spin-button {
+        margin: 0;
         -webkit-appearance: none;
-        margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
     }
 
-    input[type="number"] {
-        -moz-appearance: textfield; /* Firefox */
-        appearance: none;
+    .measurement-input[type="number"] {
+        appearance: textfield;
     }
 
-    .bmi-table {
+    .bmi-result {
+        min-height: 7rem;
         display: flex;
         flex-direction: column;
-        gap: 1rem;
-        background-color: #eee;
-        border-radius: 0.5rem;
-        padding: 1rem;
+        justify-content: center;
+        align-items: center;
+        padding: var(--ui-space-4);
+        background: var(--ui-color-surface-inset);
+        text-align: center;
     }
 
-    .table-row {
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
-        gap: 32px;
+    .bmi-value {
+        display: block;
+        font-size: var(--ui-font-size-2xl);
+        font-variant-numeric: tabular-nums;
+        line-height: 1.15;
     }
 
-    .table-row span, .table-row b {
-        flex: 1;
-
+    .bmi-ranges {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: var(--ui-space-2);
     }
 
-    /* Handle mobile screens */
-    @media (max-width: 600px) {
-        .row {
-            flex-direction: column;
-            gap: 1rem;
-            align-items: start;
+    .bmi-range {
+        min-width: 0;
+        display: grid;
+        gap: var(--ui-space-1);
+        padding: var(--ui-space-3);
+        border: 1px solid var(--ui-color-border);
+        border-radius: var(--ui-radius-md);
+        background: var(--ui-color-surface-inset);
+        color: var(--ui-color-text-muted);
+        font-size: var(--ui-font-size-sm);
+        transition: border-color var(--ui-motion-base) var(--ui-ease-standard), background var(--ui-motion-base) var(--ui-ease-standard), color var(--ui-motion-base) var(--ui-ease-standard);
+    }
+
+    .bmi-range span {
+        font-variant-numeric: tabular-nums;
+    }
+
+    .bmi-range.active {
+        box-shadow: inset 0 0 0 1px currentColor;
+    }
+
+    .bmi-range--success.active {
+        border-color: var(--ui-color-success-border);
+        background: var(--ui-color-success-surface);
+        color: var(--ui-color-success);
+    }
+
+    .bmi-range--warning.active {
+        border-color: var(--ui-color-warning-border);
+        background: var(--ui-color-warning-surface);
+        color: var(--ui-color-warning);
+    }
+
+    .bmi-range--danger.active {
+        border-color: var(--ui-color-danger-border);
+        background: var(--ui-color-danger-surface);
+        color: var(--ui-color-danger);
+    }
+
+    @media (max-width: 680px) {
+        .bmi-inputs {
+            grid-template-columns: 1fr 1fr;
         }
 
-        .table-row {
-            flex-direction: column;
-            gap: 0.5rem;
+        .bmi-result {
+            grid-column: 1 / -1;
         }
 
-        .bmi-table {
-            flex-direction: row;
-            gap: 48px;
+        .bmi-ranges {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @media (max-width: 420px) {
+        .bmi-inputs,
+        .bmi-ranges {
+            grid-template-columns: 1fr;
+        }
+
+        .bmi-result {
+            grid-column: auto;
         }
     }
 </style>

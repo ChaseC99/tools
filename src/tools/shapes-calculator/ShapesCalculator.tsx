@@ -156,13 +156,13 @@ export default function ShapesCalculator() {
   };
 
   return (
-    <div className="shapes-calc">
-      <label className="shapes-calc__field">
-        <span className="shapes-calc__label">Shape</span>
+    <div className="shapes-calc ui-stack">
+      <label className="ui-field">
+        <span className="ui-label">Shape</span>
         <select
           value={shapeId}
           onChange={(event) => handleShapeChange(event.target.value as ShapeId)}
-          className="shapes-calc__select"
+          className="ui-select"
         >
           {SHAPE_OPTIONS.map((option) => (
             <option key={option.id} value={option.id}>
@@ -172,31 +172,31 @@ export default function ShapesCalculator() {
         </select>
       </label>
 
-      <div className="shapes-calc__grid">
+      <div className="ui-grid">
         {shapeDefinition.fields.map((field) => (
-          <label className="shapes-calc__field" key={field.key}>
-            <span className="shapes-calc__label">{field.label}</span>
+          <label className="ui-field" key={field.key}>
+            <span className="ui-label">{field.label}</span>
             <input
               type="text"
               inputMode="decimal"
               value={fieldValues[field.key] ?? ""}
               onChange={(event) => updateField(field.key, event.target.value)}
               placeholder="0"
-              className="shapes-calc__input"
+              className="ui-input"
             />
           </label>
         ))}
       </div>
 
       <div className="shapes-calc__panes">
-        <div className="shapes-calc__preview-card">
+        <div className="shapes-calc__preview-card ui-panel" data-variant="inset">
           <ShapePreview shapeId={shapeId} fieldValues={fieldValues} />
         </div>
 
         {!calculation.ok ? (
-          <p className="shapes-calc__message">{calculation.error}</p>
+          <p className="ui-empty-state">{calculation.error}</p>
         ) : (
-          <div className="shapes-calc__result-card">
+          <div className="shapes-calc__result-card ui-result-card ui-stack">
             <p className="shapes-calc__result-label">{calculation.shapeLabel} Area</p>
             <p className="shapes-calc__result-value">
               {formatArea(calculation.area)}

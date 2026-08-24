@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from "re
 
 import DownloadButton from "@tools/shared/DownloadButton";
 import ErrorMessage from "@tools/shared/ErrorMessage";
-import ImageDropZone from "@tools/shared/ImageDropZone";
+import ImageInput from "@tools/shared/ImageInput";
 import Spinner from "@tools/shared/Spinner";
 
 import JpgCompressionWorker from "./jpgCompression.worker?worker";
@@ -108,8 +108,8 @@ const styles: Record<string, CSSProperties> = {
         padding: "1rem",
     },
     pageCard: {
-        background: "#ffffff",
-        border: "1px solid #d9e2ec",
+        background: "var(--ui-color-surface)",
+        border: "1px solid var(--ui-color-border)",
         borderRadius: 20,
         boxShadow: "0 20px 45px rgba(15, 23, 42, 0.08)",
         padding: "1.25rem",
@@ -121,11 +121,11 @@ const styles: Record<string, CSSProperties> = {
     },
     intro: {
         margin: 0,
-        color: "#475569",
+        color: "var(--ui-color-text-muted)",
         lineHeight: 1.6,
     },
     introLink: {
-        color: "#2563eb",
+        color: "var(--ui-color-action)",
         fontWeight: 600,
         textDecoration: "none",
     },
@@ -133,14 +133,14 @@ const styles: Record<string, CSSProperties> = {
     uploadDropzone: {
         padding: "2rem",
         background: "transparent",
-        border: "2px dashed #94a3b8",
+        border: "2px dashed var(--ui-color-text-subtle)",
     },
     uploadDropzoneSelected: {
         padding: "0.75rem",
     },
     uploadDropzoneDragging: {
         background: "rgba(59, 130, 246, 0.06)",
-        border: "2px dashed #60a5fa",
+        border: "2px dashed var(--ui-color-focus)",
     },
     uploadRow: {
         display: "flex",
@@ -150,7 +150,7 @@ const styles: Record<string, CSSProperties> = {
     },
     uploadFilename: {
         margin: 0,
-        color: "#334155",
+        color: "var(--ui-color-text)",
         fontSize: "0.95rem",
         textAlign: "left",
         overflow: "hidden",
@@ -159,10 +159,10 @@ const styles: Record<string, CSSProperties> = {
     },
     uploadReplaceButton: {
         pointerEvents: "none",
-        border: "1px solid #d0d8e5",
+        border: "1px solid var(--ui-color-border)",
         borderRadius: 10,
-        color: "#2f5c9a",
-        background: "#f8fafc",
+        color: "var(--ui-color-action)",
+        background: "var(--ui-color-surface-inset)",
         padding: "0.35rem 0.8rem",
         fontSize: "0.85rem",
         fontWeight: 600,
@@ -170,15 +170,15 @@ const styles: Record<string, CSSProperties> = {
     },
     uploadEmptyText: {
         margin: 0,
-        color: "#475569",
+        color: "var(--ui-color-text-muted)",
         fontSize: "0.95rem",
         lineHeight: 1.6,
         wordBreak: "break-word",
     },
 
     sectionCard: {
-        background: "#ffffff",
-        border: "1px solid #d9e2ec",
+        background: "var(--ui-color-surface)",
+        border: "1px solid var(--ui-color-border)",
         borderRadius: 18,
         boxShadow: "0 14px 32px rgba(15, 23, 42, 0.06)",
     },
@@ -199,7 +199,7 @@ const styles: Record<string, CSSProperties> = {
         gap: "0.45rem",
     },
     targetLabelText: {
-        color: "#162033",
+        color: "var(--ui-color-text)",
         fontSize: "0.95rem",
         fontWeight: 600,
     },
@@ -207,8 +207,8 @@ const styles: Record<string, CSSProperties> = {
         display: "flex",
         alignItems: "center",
         gap: "0.5rem",
-        background: "#f8fbff",
-        border: "1px solid #cad6e2",
+        background: "var(--ui-color-surface)",
+        border: "1px solid var(--ui-color-border)",
         borderRadius: 10,
         padding: "0.65rem 0.8rem",
     },
@@ -216,16 +216,16 @@ const styles: Record<string, CSSProperties> = {
         width: "100%",
         border: "none",
         background: "transparent",
-        color: "#162033",
+        color: "var(--ui-color-text)",
         fontSize: "1rem",
         outline: "none",
     },
     targetUnit: {
-        color: "#64748b",
+        color: "var(--ui-color-text-muted)",
         fontSize: "0.9rem",
     },
     targetHelp: {
-        color: "#64748b",
+        color: "var(--ui-color-text-muted)",
         fontSize: "0.92rem",
         lineHeight: 1.55,
     },
@@ -239,8 +239,8 @@ const styles: Record<string, CSSProperties> = {
         flexDirection: "column",
     },
     resultCard: {
-        background: "#ffffff",
-        border: "1px solid #d9e2ec",
+        background: "var(--ui-color-surface)",
+        border: "1px solid var(--ui-color-border)",
         borderRadius: 18,
         boxShadow: "0 14px 32px rgba(15, 23, 42, 0.06)",
         padding: "1.1rem",
@@ -272,14 +272,14 @@ const styles: Record<string, CSSProperties> = {
     cardTitle: {
         margin: 0,
         fontSize: "1.15rem",
-        color: "#162033",
+        color: "var(--ui-color-text)",
     },
     cardTitleCompact: {
         fontSize: "1rem",
     },
     cardSubtitle: {
         margin: 0,
-        color: "#66758f",
+        color: "var(--ui-color-text-muted)",
         fontSize: "0.9rem",
         lineHeight: 1.4,
     },
@@ -296,32 +296,32 @@ const styles: Record<string, CSSProperties> = {
     },
     statusPillSuccess: {
         background: "rgba(34, 197, 94, 0.12)",
-        color: "#15803d",
+        color: "var(--ui-color-success)",
     },
     statusPillWarning: {
         background: "rgba(250, 204, 21, 0.14)",
-        color: "#b45309",
+        color: "var(--ui-color-warning)",
     },
 
     mediaFrame: {
         position: "relative",
         borderRadius: 16,
         overflow: "hidden",
-        background: "#edf3fa",
-        border: "1px solid #d9e2ec",
+        background: "var(--ui-color-surface-inset)",
+        border: "1px solid var(--ui-color-border)",
     },
     mediaFrameSkeleton: {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "#edf3fa",
+        background: "var(--ui-color-surface-inset)",
     },
     mediaImage: {
         display: "block",
         width: "100%",
         height: "auto",
         maxWidth: "100%",
-        background: "#edf3fa",
+        background: "var(--ui-color-surface-inset)",
     },
     mediaSkeletonSizingImage: {
         display: "block",
@@ -338,11 +338,11 @@ const styles: Record<string, CSSProperties> = {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "#edf3fa",
+        background: "var(--ui-color-surface-inset)",
     },
     compareCard: {
-        background: "#ffffff",
-        border: "1px solid #d9e2ec",
+        background: "var(--ui-color-surface)",
+        border: "1px solid var(--ui-color-border)",
         borderRadius: 18,
         boxShadow: "0 14px 32px rgba(15, 23, 42, 0.06)",
         padding: "1rem",
@@ -353,7 +353,7 @@ const styles: Record<string, CSSProperties> = {
     },
     compareDescription: {
         margin: "0.25rem 0 0",
-        color: "#64748b",
+        color: "var(--ui-color-text-muted)",
         lineHeight: 1.5,
     },
     compareLabels: {
@@ -361,7 +361,7 @@ const styles: Record<string, CSSProperties> = {
         justifyContent: "space-between",
         alignItems: "center",
         gap: "1rem",
-        color: "#64748b",
+        color: "var(--ui-color-text-muted)",
         fontSize: "0.85rem",
         fontWeight: 600,
     },
@@ -369,8 +369,8 @@ const styles: Record<string, CSSProperties> = {
         position: "relative",
         borderRadius: 16,
         overflow: "hidden",
-        background: "#edf3fa",
-        border: "1px solid #d9e2ec",
+        background: "var(--ui-color-surface-inset)",
+        border: "1px solid var(--ui-color-border)",
         touchAction: "none",
         userSelect: "none",
         height: 360,
@@ -390,7 +390,7 @@ const styles: Record<string, CSSProperties> = {
         height: "100%",
         objectFit: "cover",
         objectPosition: "center",
-        background: "#edf3fa",
+        background: "var(--ui-color-surface-inset)",
         transform: `scale(${COMPARE_ZOOM_SCALE})`,
         transformOrigin: "center",
     },
@@ -400,7 +400,7 @@ const styles: Record<string, CSSProperties> = {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "#edf3fa",
+        background: "var(--ui-color-surface-inset)",
     },
     compareCompressedMask: {
         position: "absolute",
@@ -432,13 +432,13 @@ const styles: Record<string, CSSProperties> = {
         width: 42,
         height: 42,
         borderRadius: "999px",
-        background: "#ffffff",
-        border: "1px solid #d9e2ec",
+        background: "var(--ui-color-surface)",
+        border: "1px solid var(--ui-color-border)",
         boxShadow: "0 12px 24px rgba(15, 23, 42, 0.16)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        color: "#334155",
+        color: "var(--ui-color-text)",
         fontSize: "1.1rem",
         fontWeight: 700,
     },
@@ -460,12 +460,12 @@ const styles: Record<string, CSSProperties> = {
         gridTemplateColumns: "1fr",
     },
     statLabel: {
-        color: "#6b7b95",
+        color: "var(--ui-color-text-muted)",
         fontSize: "0.8rem",
         marginBottom: "0.15rem",
     },
     statValue: {
-        color: "#162033",
+        color: "var(--ui-color-text)",
         fontWeight: 600,
     },
     statValueWrap: {
@@ -482,9 +482,9 @@ const styles: Record<string, CSSProperties> = {
     subtleButton: {
         padding: "0.6rem 1rem",
         borderRadius: 10,
-        border: "1px solid #c8d4e3",
-        background: "#ffffff",
-        color: "#162033",
+        border: "1px solid var(--ui-color-border)",
+        background: "var(--ui-color-surface)",
+        color: "var(--ui-color-text)",
         cursor: "pointer",
         fontSize: "0.95rem",
         boxShadow: "0 2px 8px rgba(15, 23, 42, 0.04)",
@@ -494,13 +494,13 @@ const styles: Record<string, CSSProperties> = {
         padding: "0.8rem 0.9rem",
         borderRadius: 12,
         background: "rgba(250, 204, 21, 0.12)",
-        color: "#92400e",
+        color: "var(--ui-color-warning)",
         lineHeight: 1.5,
     },
 
     manualCard: {
-        background: "#ffffff",
-        border: "1px solid #d9e2ec",
+        background: "var(--ui-color-surface)",
+        border: "1px solid var(--ui-color-border)",
         borderRadius: 18,
         boxShadow: "0 14px 32px rgba(15, 23, 42, 0.06)",
         padding: "1rem",
@@ -510,7 +510,7 @@ const styles: Record<string, CSSProperties> = {
     },
     manualDescription: {
         margin: "0.25rem 0 0",
-        color: "#64748b",
+        color: "var(--ui-color-text-muted)",
         lineHeight: 1.5,
     },
     manualRow: {
@@ -530,32 +530,32 @@ const styles: Record<string, CSSProperties> = {
         flexDirection: "column",
     },
     manualLabel: {
-        color: "#162033",
+        color: "var(--ui-color-text)",
         minWidth: 92,
         fontWeight: 600,
     },
     manualValue: {
         minWidth: 32,
         textAlign: "right",
-        color: "#162033",
+        color: "var(--ui-color-text)",
     },
     manualSlider: {
         flex: 1,
-        accentColor: "#2563eb",
+        accentColor: "var(--ui-color-action)",
     },
 
     skeletonContent: {
         display: "flex",
         alignItems: "center",
         gap: "0.75rem",
-        color: "#475569",
+        color: "var(--ui-color-text-muted)",
         padding: "0 1rem",
         textAlign: "center",
     },
     skeletonLine: {
         height: 18,
         borderRadius: 999,
-        background: "#dbe7f3",
+        background: "var(--ui-color-border)",
     },
     skeletonButtonShell: {
         display: "inline-flex",
@@ -563,21 +563,21 @@ const styles: Record<string, CSSProperties> = {
         gap: "0.4rem",
         padding: "0.55rem 1rem",
         borderRadius: 8,
-        border: "1px solid #d9e2ec",
-        background: "#f8fbff",
+        border: "1px solid var(--ui-color-border)",
+        background: "var(--ui-color-surface)",
     },
     skeletonButtonIcon: {
         width: 20,
         height: 20,
         borderRadius: 6,
-        background: "#dbe7f3",
+        background: "var(--ui-color-border)",
         flexShrink: 0,
     },
     skeletonButtonLabel: {
         width: 74,
         height: 18,
         borderRadius: 999,
-        background: "#dbe7f3",
+        background: "var(--ui-color-border)",
     },
 };
 
@@ -733,7 +733,7 @@ function ComparePreview({
     };
 
     return (
-        <section style={styles.compareCard}>
+        <section className="ui-panel" style={styles.compareCard}>
             <div>
                 <h2 style={{ ...styles.cardTitle, ...styles.cardTitleCompact }}>Compare preview</h2>
                 <p style={styles.compareDescription}>
@@ -755,7 +755,7 @@ function ComparePreview({
                 {loading || !compressedUrl ? (
                     <div style={styles.compareLoadingOverlay}>
                         <div style={styles.skeletonContent}>
-                            <Spinner size={20} color="#2563eb" />
+                            <Spinner size={20} color="var(--ui-color-action)" />
                             <span>{loadingMessage}</span>
                         </div>
                     </div>
@@ -1176,11 +1176,6 @@ export default function JpgCompressor() {
         ...styles.mediaFrameSkeleton,
         aspectRatio: getFrameAspectRatio(source?.width ?? null, source?.height ?? null),
     };
-    const uploadDropzoneStyle = {
-        ...styles.uploadDropzone,
-        ...(selectedFileLabel ? styles.uploadDropzoneSelected : {}),
-        ...(dragging ? styles.uploadDropzoneDragging : {}),
-    };
     const controlsCardStyle = {
         ...styles.sectionCard,
         ...styles.controlsCard,
@@ -1209,9 +1204,7 @@ export default function JpgCompressor() {
     const shouldShowResults = Boolean(source || showSourceSkeleton);
 
     return (
-        <div style={styles.page}>
-            <div style={styles.pageCard}>
-                <div style={styles.pageBody}>
+        <div className="ui-stack" data-gap="lg">
                     <p style={styles.intro}>
                         Reduce large JPGs toward a target size. For your privacy, all compression happens locally in your
                         browser. Your image is not uploaded to any server. This tool uses{" "}
@@ -1221,36 +1214,28 @@ export default function JpgCompressor() {
                         .
                     </p>
 
-                    <ImageDropZone
+                    <ImageInput
                         onFile={(file) => handleFile(file, { replaceExisting: Boolean(selectedFileLabel) })}
                         dragging={dragging}
                         onDraggingChange={setDragging}
                         accept="image/jpeg,.jpg,.jpeg"
-                        theme="light"
-                        style={uploadDropzoneStyle}
-                    >
-                        {selectedFileLabel ? (
-                            <div style={styles.uploadRow}>
-                                <p style={styles.uploadFilename}>{selectedFileLabel}</p>
-                                <button type="button" style={styles.uploadReplaceButton}>
-                                    Replace
-                                </button>
-                            </div>
-                        ) : (
-                            <p style={styles.uploadEmptyText}>Drop a JPG here or click to choose one.</p>
-                        )}
-                    </ImageDropZone>
+                        formats={["JPG"]}
+                        fileName={selectedFileLabel}
+                        loading={loadingSource}
+                        loadingLabel="Reading your JPG…"
+                    />
 
-                    <div style={controlsCardStyle}>
-                        <label style={styles.targetLabel}>
-                            <span style={styles.targetLabelText}>Target size</span>
-                            <div style={styles.targetHelp}>
+                    <div className="ui-panel" style={controlsCardStyle}>
+                        <label className="ui-field" style={styles.targetLabel}>
+                            <span className="ui-label">Target size</span>
+                            <div className="ui-hint" style={styles.targetHelp}>
                                 Searches for the highest JPEG quality that stays under your target.
                                 <br />
                                 If that is impossible without resizing, you still get the smallest best-effort JPG.
                             </div>
                             <div style={styles.targetInputShell}>
                                 <input
+                                    className="ui-input"
                                     type="number"
                                     min="1"
                                     max={TARGET_LIMIT_KB}
@@ -1265,13 +1250,13 @@ export default function JpgCompressor() {
                         </label>
                     </div>
 
-                    <ErrorMessage message={inputError} theme="light" />
-                    <ErrorMessage message={autoError} theme="light" />
-                    <ErrorMessage message={manualError} theme="light" />
+                    <ErrorMessage message={inputError} />
+                    <ErrorMessage message={autoError} />
+                    <ErrorMessage message={manualError} />
 
                     {shouldShowResults && (
                         <div style={resultsRowStyle}>
-                            <section style={resultCardStyle}>
+                            <section className="ui-result-card" style={resultCardStyle}>
                                 <div style={styles.cardHeader}>
                                     <div style={cardHeaderRowStyle}>
                                         <h2 style={styles.cardTitle}>Original</h2>
@@ -1283,7 +1268,7 @@ export default function JpgCompressor() {
                                     <>
                                         <div style={skeletonMediaFrameStyle}>
                                             <div style={styles.skeletonContent}>
-                                                <Spinner size={20} color="#2563eb" />
+                                                <Spinner size={20} color="var(--ui-color-action)" />
                                                 <span>{loadingMessage}</span>
                                             </div>
                                         </div>
@@ -1319,17 +1304,15 @@ export default function JpgCompressor() {
                                 ) : null}
                             </section>
 
-                            <section style={resultCardStyle}>
+                            <section className="ui-result-card" style={resultCardStyle}>
                                 <div style={styles.cardHeader}>
                                     <div style={cardHeaderRowStyle}>
                                         <h2 style={styles.cardTitle}>Compressed</h2>
                                         {activeResult && (
                                             <div
-                                                style={{
-                                                    ...styles.statusPill,
-                                                    ...(activeResult.metTarget ? styles.statusPillSuccess : styles.statusPillWarning),
-                                                    ...(isMobile ? styles.statusPillMobile : {}),
-                                                }}
+                                                className="ui-badge"
+                                                data-variant={activeResult.metTarget ? "success" : undefined}
+                                                style={isMobile ? styles.statusPillMobile : undefined}
                                             >
                                                 {resultStatus}
                                             </div>
@@ -1366,7 +1349,7 @@ export default function JpgCompressor() {
                                         </div>
 
                                         {!activeResult.metTarget && (
-                                            <p style={styles.warningCallout}>
+                                            <p className="ui-alert" data-variant="warning">
                                                 The target could not be reached without resizing, so this is the smallest best-effort JPG
                                                 from the allowed quality range.
                                             </p>
@@ -1375,7 +1358,7 @@ export default function JpgCompressor() {
                                         <div style={styles.footerRow}>
                                             <DownloadButton href={activeResult.url} filename={activeResult.filename} />
                                             {sliderQuality !== null && autoResult && (
-                                                <button type="button" onClick={resetManualState} style={styles.subtleButton}>
+                                                <button className="ui-button" data-variant="ghost" type="button" onClick={resetManualState}>
                                                     Reset to auto ({autoResult.quality})
                                                 </button>
                                             )}
@@ -1394,14 +1377,14 @@ export default function JpgCompressor() {
                                                     />
                                                     <div style={styles.mediaSkeletonOverlay}>
                                                         <div style={styles.skeletonContent}>
-                                                            <Spinner size={20} color="#2563eb" />
+                                                            <Spinner size={20} color="var(--ui-color-action)" />
                                                             <span>{loadingMessage}</span>
                                                         </div>
                                                     </div>
                                                 </>
                                             ) : (
                                                 <div style={styles.skeletonContent}>
-                                                    <Spinner size={20} color="#2563eb" />
+                                                    <Spinner size={20} color="var(--ui-color-action)" />
                                                     <span>{loadingMessage}</span>
                                                 </div>
                                             )}
@@ -1429,7 +1412,7 @@ export default function JpgCompressor() {
                     )}
 
                     {source && autoResult && (
-                        <section style={styles.manualCard}>
+                        <section className="ui-panel ui-stack" style={styles.manualCard}>
                             <div>
                                 <h2 style={{ ...styles.cardTitle, ...styles.cardTitleCompact }}>Manual fine-tuning</h2>
                                 <p style={styles.manualDescription}>
@@ -1442,6 +1425,7 @@ export default function JpgCompressor() {
                                 <label style={manualFieldStyle}>
                                     <span style={styles.manualLabel}>Quality</span>
                                     <input
+                                        className="ui-range"
                                         type="range"
                                         min={MIN_QUALITY}
                                         max={MAX_QUALITY}
@@ -1453,7 +1437,6 @@ export default function JpgCompressor() {
                                         onChange={(event) =>
                                             handleManualQualityChange(Number.parseInt(event.target.value, 10))
                                         }
-                                        style={styles.manualSlider}
                                     />
                                     <strong style={styles.manualValue}>{displayedQuality}</strong>
                                 </label>
@@ -1472,8 +1455,6 @@ export default function JpgCompressor() {
                             originalUrl={source?.previewUrl ?? null}
                         />
                     )}
-                </div>
-            </div>
         </div>
     );
 }

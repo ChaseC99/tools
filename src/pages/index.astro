@@ -5,9 +5,9 @@ import FeedbackActions from "../components/FeedbackActions.astro";
 ---
 
 <PageLayout title="Tools" description="A collection of free browser-based tools — no sign-up, no tracking, just useful utilities.">
-	<section class="hero">
+	<section class="hero" aria-labelledby="home-title">
 		<div class="hero-title">
-			<h1>Tools</h1>
+			<h1 id="home-title">Tools</h1>
 			<img src="/icons/tool.svg" alt="Tools" class="hero-icon" />
 		</div>
 		<p class="hero-subtitle">A collection of <span id="cycling-word">simple</span> tools.</p>
@@ -19,20 +19,20 @@ import FeedbackActions from "../components/FeedbackActions.astro";
 <style>
 	.hero {
 		text-align: center;
-		padding: 6rem 1rem 3rem;
+		padding: clamp(4rem, 12vw, 7rem) var(--ui-space-4) var(--ui-space-12);
 	}
 
 	.hero-title {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		gap: 1.25rem;
-		margin-bottom: 1rem;
+		gap: var(--ui-space-5);
+		margin-bottom: var(--ui-space-4);
 	}
 
 	.hero-icon {
-		width: 6rem;
-		height: 6rem;
+		width: clamp(3.5rem, 10vw, 5.5rem);
+		height: clamp(3.5rem, 10vw, 5.5rem);
 		animation: wiggle 4s ease-in-out infinite;
 		transform-origin: bottom center;
 	}
@@ -47,21 +47,23 @@ import FeedbackActions from "../components/FeedbackActions.astro";
 	}
 
 	.hero h1 {
-		font-size: 6rem;
+		font-size: var(--ui-font-size-display);
 		font-weight: 800;
 		margin: 0;
 		line-height: 1;
 	}
 
 	.hero-subtitle {
-		color: #666;
-		font-size: 1.4rem;
-		margin: 2rem 0;
+		color: var(--ui-color-text-muted);
+		font-size: var(--ui-font-size-lg);
+		margin: var(--ui-space-6) 0 0;
 	}
 
 	#cycling-word {
 		display: inline-block;
-		transition: opacity 0.3s ease, transform 0.3s ease;
+		color: var(--ui-color-text);
+		font-weight: 650;
+		transition: opacity var(--ui-motion-base) var(--ui-ease-standard), transform var(--ui-motion-base) var(--ui-ease-standard);
 	}
 
 	#cycling-word.fade-out {
@@ -74,11 +76,14 @@ import FeedbackActions from "../components/FeedbackActions.astro";
 		transform: translateY(0);
 	}
 
-	footer {
-		text-align: center;
-		padding: 2rem 1rem;
-		color: #666;
-		font-size: 0.9rem;
+	:global([data-theme="dark"]) .hero-icon {
+		filter: invert(1);
+	}
+
+	@media (max-width: 520px) {
+		.hero-title {
+			gap: var(--ui-space-3);
+		}
 	}
 </style>
 

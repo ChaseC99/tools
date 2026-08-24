@@ -3,13 +3,31 @@ import PageLayout from "../layouts/PageLayout.astro";
 import FeedbackActions from "@components/FeedbackActions.astro";
 ---
 
-<PageLayout title="Tools">
-    <p>Hmm that tool isn't in the toolbox 🤔</p>
-    <FeedbackActions />
+<PageLayout title="Tool not found" description="The requested tool could not be found.">
+    <section class="ui-stack" data-gap="lg">
+        <div class="ui-empty-state ui-stack">
+            <span class="not-found-icon" aria-hidden="true">404</span>
+            <div class="ui-stack" data-gap="sm">
+                <h2>That tool isn’t in the toolbox.</h2>
+                <p class="ui-muted">Choose another tool or head back to the full collection.</p>
+            </div>
+            <a class="ui-button" href="/">Browse all tools</a>
+        </div>
+        <FeedbackActions />
+    </section>
 </PageLayout>
 
 <style>
-    p {
-        text-align: center;
+    .not-found-icon {
+        color: var(--ui-color-text-subtle);
+        font-family: var(--ui-font-mono);
+        font-size: var(--ui-font-size-xl);
+        font-weight: 750;
+    }
+
+    h2 {
+        margin: 0;
+        color: var(--ui-color-text);
+        font-size: var(--ui-font-size-xl);
     }
 </style>

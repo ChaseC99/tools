@@ -51,98 +51,37 @@ export default function Stopwatch() {
     };
 
     return (
-        <div style={styles.container}>
-            <div style={styles.display}>{formatTime(elapsed)}</div>
+        <section className="ui-clock ui-stack" data-gap="lg" aria-label="Stopwatch">
+            <output className="ui-time-display" aria-live="off">{formatTime(elapsed)}</output>
 
-            <div style={styles.buttons}>
+            <div className="ui-action-bar ui-action-bar--center">
                 {!running ? (
-                    <button onClick={start} style={styles.button}>
+                    <button className="ui-button" data-size="lg" onClick={start}>
                         {elapsed > 0 ? "Resume" : "Start"}
                     </button>
                 ) : (
-                    <button onClick={pause} style={styles.button}>Pause</button>
+                    <button className="ui-button" data-size="lg" onClick={pause}>Pause</button>
                 )}
                 {running && (
-                    <button onClick={lap} style={styles.button}>Lap</button>
+                    <button className="ui-button" data-size="lg" data-variant="secondary" onClick={lap}>Lap</button>
                 )}
-                <button onClick={reset} style={{ ...styles.button, ...styles.resetButton }}>Reset</button>
+                <button className="ui-button" data-size="lg" data-variant="ghost" onClick={reset}>Reset</button>
             </div>
 
             {laps.length > 0 && (
-                <div style={styles.lapList}>
-                    <div style={styles.lapHeader}>
+                <div className="ui-data-list" aria-label="Laps">
+                    <div className="ui-data-row ui-data-header">
                         <span>Lap</span>
                         <span>Time</span>
                     </div>
                     {laps.map((l, i) => (
-                        <div key={l.id} style={styles.lapRow}>
+                        <div key={l.id} className="ui-data-row">
                             <span>#{laps.length - i}</span>
-                            <span style={styles.lapTime}>{formatTime(l.time)}</span>
+                            <span className="ui-mono">{formatTime(l.time)}</span>
                         </div>
                     ))}
                 </div>
             )}
-        </div>
+        </section>
     );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-    container: {
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: "32px",
-        padding: "20px",
-        minHeight: "calc(100vh - 80px)",
-    },
-    display: {
-        fontSize: "min(20vw, 96px)",
-        fontWeight: "bold",
-        fontFamily: "monospace",
-        letterSpacing: "2px",
-    },
-    buttons: {
-        display: "flex",
-        gap: "12px",
-    },
-    button: {
-        padding: "12px 32px",
-        fontSize: "18px",
-        fontWeight: "bold",
-        border: "2px solid #333",
-        borderRadius: "8px",
-        backgroundColor: "#fff",
-        cursor: "pointer",
-    },
-    resetButton: {
-        borderColor: "#999",
-        color: "#666",
-    },
-    lapList: {
-        width: "100%",
-        maxWidth: "360px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "4px",
-    },
-    lapHeader: {
-        display: "flex",
-        justifyContent: "space-between",
-        fontWeight: "bold",
-        fontSize: "14px",
-        color: "#888",
-        borderBottom: "1px solid #e5e7eb",
-        paddingBottom: "6px",
-    },
-    lapRow: {
-        display: "flex",
-        justifyContent: "space-between",
-        padding: "8px 0",
-        borderBottom: "1px solid #f0f0f0",
-    },
-    lapTime: {
-        fontFamily: "monospace",
-        fontSize: "16px",
-    },
-};

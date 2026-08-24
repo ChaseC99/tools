@@ -3,14 +3,17 @@ import PageLayout from "@layouts/PageLayout.astro";
 ---
 
 <PageLayout title="Party Emoji Generator" description="Upload an image to create an animated party parrot-style emoji GIF with wobble and rainbow effects.">
-	<div class="party-tool">
-		<p class="description">Upload an image to generate an animated "party parrot"-style emoji with wobble and rainbow effects.<br/>Download the result as a GIF ready to use in Slack.</p>
-		<div class="card">
-			<div id="drop-zone" class="drop-zone">
-				<div class="drop-icon">&#x1F5BC;&#xFE0F;</div>
-				<p>Drop an image here or click to upload</p>
-				<span class="drop-hint">PNG, JPG, GIF — will be resized to 128x128</span>
-				<input type="file" id="file-input" accept="image/*" />
+	<div class="party-tool ui-stack">
+		<p class="description ui-muted">Upload an image to generate an animated party emoji with wobble and rainbow effects. Download the result as a Slack-ready GIF.</p>
+		<div class="card ui-panel ui-stack">
+			<div class="ui-image-input-field">
+			<div id="drop-zone" class="drop-zone ui-dropzone ui-image-input" role="button" tabindex="0" aria-label="Choose an image. PNG, JPG, or GIF. Resized to 128 by 128 pixels.">
+				<span class="ui-image-input__visual" aria-hidden="true">&#x1F5BC;&#xFE0F;</span>
+				<span class="ui-image-input__content"><strong class="ui-image-input__title">Choose an image</strong></span>
+				<span class="ui-image-input__action" aria-hidden="true">Browse</span>
+				<input class="ui-dropzone-input" type="file" id="file-input" accept="image/*" />
+			</div>
+			<p class="ui-image-input__support">PNG, JPG, or GIF · Resized to 128 × 128</p>
 			</div>
 
 			<div id="preview-area" class="preview-area hidden">
@@ -18,36 +21,33 @@ import PageLayout from "@layouts/PageLayout.astro";
 					<canvas id="preview" width="128" height="128"></canvas>
 				</div>
 				<span id="file-name" class="file-name"></span>
-				<a id="new-image-link" class="new-image-link" href="#">Change image</a>
+				<a id="new-image-link" class="ui-button" data-variant="ghost" data-size="sm" href="#">Change image</a>
 			</div>
 
 			<div id="controls-panel" class="controls-panel hidden">
 				<div class="toggles">
-					<label class="pill-toggle">
-						<input type="checkbox" id="wobble-toggle" checked />
-						<span class="pill"></span>
+					<label class="ui-choice">
+						<span class="ui-switch"><input type="checkbox" id="wobble-toggle" checked /><span class="ui-switch-track"></span></span>
 						Wobble
 					</label>
-					<label class="pill-toggle">
-						<input type="checkbox" id="color-toggle" checked />
-						<span class="pill"></span>
+					<label class="ui-choice">
+						<span class="ui-switch"><input type="checkbox" id="color-toggle" checked /><span class="ui-switch-track"></span></span>
 						Rainbow
 					</label>
 				</div>
 
 				<div class="speed-row">
-					<label for="speed-range">Speed</label>
-					<input type="range" id="speed-range" min="20" max="240" value="120" />
+					<label class="ui-label" for="speed-range">Speed</label>
+					<input class="ui-range" type="range" id="speed-range" min="20" max="240" value="120" />
 				</div>
 
-				<button id="download-btn" class="download-btn" disabled>
+				<button id="download-btn" class="ui-button" disabled>
 					<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8m0 0l-3-3m3 3l3-3M2 13h12"/></svg>
 					Download GIF
 				</button>
 			</div>
 		</div>
 	</div>
-
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
 	<script>
 		const SIZE = 128;
@@ -75,6 +75,12 @@ import PageLayout from "@layouts/PageLayout.astro";
 
 		// --- Upload handling ---
 		dropZone.addEventListener("click", () => fileInput.click());
+		dropZone.addEventListener("keydown", (event) => {
+			if (event.key === "Enter" || event.key === " ") {
+				event.preventDefault();
+				fileInput.click();
+			}
+		});
 
 		dropZone.addEventListener("dragover", (e) => {
 			e.preventDefault();
@@ -230,17 +236,13 @@ import PageLayout from "@layouts/PageLayout.astro";
 
 	<style>
 		.party-tool {
-			display: flex;
-			flex-direction: column;
 			align-items: center;
-			padding: 2rem 1rem;
 		}
 
 		.description {
 			max-width: 380px;
 			text-align: center;
-			color: #6b7280;
-			font-size: 0.9rem;
+			font-size: var(--ui-font-size-sm);
 			line-height: 1.5;
 			margin: 0 0 1.25rem;
 		}
@@ -248,55 +250,19 @@ import PageLayout from "@layouts/PageLayout.astro";
 		.card {
             max-width: 90vw;
             min-width: 30vw;
-			background: #fff;
-			border: 1px solid #e5e7eb;
-			border-radius: 16px;
-			box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
-			padding: 2rem;
-			display: flex;
-			flex-direction: column;
+			width: min(100%, 32rem);
 			align-items: center;
-			gap: 1.5rem;
 		}
 
 		/* --- Drop zone --- */
 		.drop-zone {
 			width: 100%;
-			padding: 2rem 1rem;
-			border: 2px dashed #d1d5db;
-			border-radius: 12px;
-			text-align: center;
-			cursor: pointer;
-			transition: border-color 0.2s, background 0.2s;
 		}
 
 		.drop-zone:hover,
 		.drop-zone.drag-over {
-			border-color: #4f8cff;
-			background: rgba(79, 140, 255, 0.04);
-		}
-
-		.drop-icon {
-			font-size: 2rem;
-			margin-bottom: 0.5rem;
-		}
-
-		.drop-zone p {
-			margin: 0;
-			color: #374151;
-			font-size: 0.95rem;
-			font-weight: 500;
-		}
-
-		.drop-hint {
-			display: block;
-			margin-top: 0.35rem;
-			color: #9ca3af;
-			font-size: 0.8rem;
-		}
-
-		.drop-zone input[type="file"] {
-			display: none;
+			border-color: var(--ui-color-focus);
+			background: var(--ui-color-surface-hover);
 		}
 
 		.hidden {
@@ -330,23 +296,11 @@ import PageLayout from "@layouts/PageLayout.astro";
 
 		.file-name {
 			font-size: 0.8rem;
-			color: #9ca3af;
+			color: var(--ui-color-text-muted);
 			max-width: 200px;
 			overflow: hidden;
 			text-overflow: ellipsis;
 			white-space: nowrap;
-		}
-
-		.new-image-link {
-			font-size: 0.8rem;
-			color: #6b7280;
-			text-decoration: none;
-			transition: color 0.15s;
-		}
-
-		.new-image-link:hover {
-			color: #4f8cff;
-			text-decoration: underline;
 		}
 
 		/* --- Controls panel --- */
@@ -355,7 +309,7 @@ import PageLayout from "@layouts/PageLayout.astro";
 			display: flex;
 			flex-direction: column;
 			gap: 1rem;
-			border-top: 1px solid #f0f0f0;
+			border-top: 1px solid var(--ui-color-border);
 			padding-top: 1.25rem;
 		}
 
@@ -366,50 +320,6 @@ import PageLayout from "@layouts/PageLayout.astro";
 			gap: 1.25rem;
 		}
 
-		.pill-toggle {
-			display: flex;
-			align-items: center;
-			gap: 0.5rem;
-			font-size: 0.85rem;
-			color: #555;
-			cursor: pointer;
-			user-select: none;
-		}
-
-		.pill-toggle input {
-			display: none;
-		}
-
-		.pill {
-			position: relative;
-			width: 36px;
-			height: 20px;
-			background: #d1d5db;
-			border-radius: 10px;
-			transition: background 0.2s;
-		}
-
-		.pill::after {
-			content: "";
-			position: absolute;
-			top: 2px;
-			left: 2px;
-			width: 16px;
-			height: 16px;
-			background: #fff;
-			border-radius: 50%;
-			transition: transform 0.2s;
-			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-		}
-
-		.pill-toggle input:checked + .pill {
-			background: #4f8cff;
-		}
-
-		.pill-toggle input:checked + .pill::after {
-			transform: translateX(16px);
-		}
-
 		/* Speed row */
 		.speed-row {
 			display: flex;
@@ -417,26 +327,11 @@ import PageLayout from "@layouts/PageLayout.astro";
 			gap: 0.75rem;
 		}
 
-		.speed-row label {
-			font-size: 0.85rem;
-			color: #555;
-			flex-shrink: 0;
-			transition: opacity 0.2s;
-		}
-
 		.speed-row.disabled label {
 			opacity: 0.4;
 		}
 
-		.speed-row input[type="range"] {
-			flex: 1;
-			height: 4px;
-			-webkit-appearance: none;
-			appearance: none;
-			background: #e5e7eb;
-			border-radius: 2px;
-			outline: none;
-		}
+		.speed-row input[type="range"] { flex: 1; }
 
 		.speed-row input[type="range"]:disabled {
 			opacity: 0.4;
@@ -447,53 +342,9 @@ import PageLayout from "@layouts/PageLayout.astro";
 			opacity: 0.4;
 		}
 
-		.speed-row input[type="range"]::-webkit-slider-thumb {
-			-webkit-appearance: none;
-			width: 16px;
-			height: 16px;
-			background: #4f8cff;
-			border-radius: 50%;
-			cursor: pointer;
-			box-shadow: 0 1px 4px rgba(79, 140, 255, 0.3);
-		}
+		#download-btn { width: 100%; }
 
-		.speed-row input[type="range"]:disabled::-webkit-slider-thumb {
-			cursor: default;
-		}
-
-		/* Download button */
-		.download-btn {
-			width: 100%;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			gap: 0.5rem;
-			padding: 0.7rem 1rem;
-			border: none;
-			border-radius: 10px;
-			background: #22c55e;
-			color: #fff;
-			font-size: 0.95rem;
-			font-weight: 600;
-			cursor: pointer;
-			transition: background 0.2s, transform 0.1s;
-		}
-
-		.download-btn:hover:not(:disabled) {
-			background: #16a34a;
-			transform: translateY(-1px);
-		}
-
-		.download-btn:active:not(:disabled) {
-			transform: translateY(0);
-		}
-
-		.download-btn:disabled {
-			background: #d1d5db;
-			cursor: default;
-		}
-
-		.download-btn svg {
+		#download-btn svg {
 			flex-shrink: 0;
 		}
 	</style>

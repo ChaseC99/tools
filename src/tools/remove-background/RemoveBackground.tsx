@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { canvasToBlob, clamp, cloneImageData, loadImage } from "@tools/shared/imageUtils";
-import ImageDropZone from "@tools/shared/ImageDropZone";
+import ImageInput from "@tools/shared/ImageInput";
 import ErrorMessage from "@tools/shared/ErrorMessage";
 import DownloadButton from "@tools/shared/DownloadButton";
 import Spinner from "@tools/shared/Spinner";
@@ -871,106 +871,92 @@ export default function RemoveBackground() {
     }, [mode]);
 
     return (
-        <div style={styles.pageContainer}>
+        <div className="ui-stack">
             <style>{AUTO_REMOVE_ANIMATIONS}</style>
-            <ImageDropZone
+            <ImageInput
                 onFile={loadFile}
                 dragging={dragging}
                 onDraggingChange={setDragging}
                 accept="image/*"
-                theme="light"
-            >
-                {!hasImage ? (
-                    <>
-                        <strong>Drop an image here or click to upload</strong>
-                        <p style={styles.uploadHint}>
-                            Supports PNG, JPG, WebP, and other browser-decodable image types
-                        </p>
-                    </>
-                ) : (
-                    <div style={styles.loadedRow}>
-                        <span style={styles.loadedRowTextWrap}>
-                            <strong style={styles.loadedFileName} title={fileLabel}>
-                                {fileLabel}
-                            </strong>
-                            <span style={styles.loadedDimensions}>
-                                • {imageMeta.width} x {imageMeta.height}
-                            </span>
-                        </span>
-                        <button
-                            type="button"
-                            style={styles.replaceImageButton}
-                        >
-                            Replace Image
-                        </button>
-                    </div>
-                )}
-            </ImageDropZone>
+                formats={["PNG", "JPG", "WebP"]}
+                fileName={fileLabel || null}
+            />
 
-            <ErrorMessage message={error} theme="light" />
+            <ErrorMessage message={error} />
 
             {hasImage && imageMeta && (
                 <>
-                    <div style={styles.toolbarRow}>
-                        <div style={styles.leftControlColumn}>
-                            <div style={styles.modeButtonsRow}>
+                    <div className="ui-panel ui-stack">
+                        <div className="ui-action-bar ui-action-bar--split">
+                            <div className="ui-segmented" role="group" aria-label="Removal mode">
                                 <button
+                                    className="ui-button"
                                     type="button"
                                     onClick={() => setMode("auto")}
                                     disabled={autoRemoving}
-                                    style={styles.modeButton(mode === "auto", autoRemoving)}
+                                    aria-pressed={mode === "auto"}
                                 >
                                     Auto Remove
                                 </button>
                                 <button
+                                    className="ui-button"
                                     type="button"
                                     onClick={() => setMode("click")}
                                     disabled={autoRemoving}
-                                    style={styles.modeButton(mode === "click", autoRemoving)}
+                                    aria-pressed={mode === "click"}
                                 >
                                     Area Remove
                                 </button>
                                 <button
+                                    className="ui-button"
                                     type="button"
                                     onClick={() => setMode("remove-color")}
                                     disabled={autoRemoving}
-                                    style={styles.modeButton(mode === "remove-color", autoRemoving)}
+                                    aria-pressed={mode === "remove-color"}
                                 >
                                     Color Remove
                                 </button>
                                 <button
+                                    className="ui-button"
                                     type="button"
                                     onClick={() => setMode("brush")}
                                     disabled={autoRemoving}
-                                    style={styles.modeButton(mode === "brush", autoRemoving)}
+                                    aria-pressed={mode === "brush"}
                                 >
                                     Brush Erase
                                 </button>
                             </div>
+                            <div className="ui-action-bar">
+                                <button className="ui-button" data-variant="secondary" type="button" onClick={handleUndo} disabled={!canUndo}>Undo</button>
+                                <button className="ui-button" data-variant="secondary" type="button" onClick={handleRedo} disabled={!canRedo}>Redo</button>
+                                <button className="ui-button" data-variant="danger" type="button" onClick={handleReset} disabled={autoRemoving}>Reset</button>
+                            </div>
+                        </div>
 
-                            <p style={styles.modeHint}>{modeHint}</p>
+                            <p className="ui-hint">{modeHint}</p>
 
-                            <div style={styles.sliderGrid}>
+                            <div className="ui-grid">
                                 {mode === "auto" && (
-                                    <div style={styles.autoActionGroup}>
+                                    <div className="ui-field">
                                         <button
+                                            className="ui-button"
                                             type="button"
                                             onClick={handleAutoRemove}
                                             disabled={autoRemoving}
-                                            style={styles.autoRemoveButton(autoRemoving)}
                                         >
-                                            {autoRemoving ? "Removing Background..." : "Remove Background"}
+                                            {autoRemoving ? "Removing background…" : "Remove Background"}
                                         </button>
                                     </div>
                                 )}
                                 {(mode === "click" || mode === "remove-color") && (
-                                    <div style={styles.sliderGroup}>
-                                        <label style={styles.sliderLabel}>
-                                            <span>Tolerance: {tolerance}</span>
-                                            <span style={styles.toleranceHint}>
+                                    <div className="ui-field">
+                                        <label className="ui-field">
+                                            <span className="ui-label">Tolerance: {tolerance}</span>
+                                            <span className="ui-hint">
                                                 Higher tolerance removes more shades near your clicked color.
                                             </span>
                                             <input
+                                                className="ui-range"
                                                 type="range"
                                                 min={0}
                                                 max={100}
@@ -984,9 +970,10 @@ export default function RemoveBackground() {
                                 )}
 
                                 {mode === "brush" && (
-                                    <label style={styles.sliderLabel}>
-                                        <span>Brush Size: {brushSize}px</span>
+                                    <label className="ui-field">
+                                        <span className="ui-label">Brush size: {brushSize}px</span>
                                         <input
+                                            className="ui-range"
                                             type="range"
                                             min={2}
                                             max={240}
@@ -998,37 +985,9 @@ export default function RemoveBackground() {
                                     </label>
                                 )}
                             </div>
-                        </div>
-
-                        <div style={styles.actionsRow}>
-                            <button
-                                type="button"
-                                onClick={handleUndo}
-                                disabled={!canUndo}
-                                style={styles.secondaryActionButton(!canUndo)}
-                            >
-                                Undo
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleRedo}
-                                disabled={!canRedo}
-                                style={styles.secondaryActionButton(!canRedo)}
-                            >
-                                Redo
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleReset}
-                                disabled={autoRemoving}
-                                style={styles.resetButton(autoRemoving)}
-                            >
-                                Reset
-                            </button>
-                        </div>
                     </div>
 
-                    <div style={styles.canvasCard}>
+                    <div className="ui-panel ui-stack" data-variant="inset">
                         <div style={styles.canvasWrap}>
                             <canvas
                                 ref={displayCanvasRef}
@@ -1053,7 +1012,7 @@ export default function RemoveBackground() {
                                             Removing background
                                         </strong>
                                         <span style={styles.autoOverlaySubtext}>
-                                            This may take a minute...
+                                            This may take a minute…
                                         </span>
                                     </div>
                                 </div>
@@ -1062,12 +1021,11 @@ export default function RemoveBackground() {
                                 <div style={styles.brushPreview(brushPreview)} />
                             )}
                         </div>
-                        <div style={styles.downloadRow}>
+                        <div className="ui-action-bar ui-action-bar--center">
                             <DownloadButton
                                 onClick={handleDownload}
                                 filename="image-no-bg.png"
                                 label="Download PNG"
-                                theme="light"
                                 disabled={autoRemoving}
                             />
                         </div>
@@ -1079,151 +1037,6 @@ export default function RemoveBackground() {
 }
 
 const styles = {
-    pageContainer: {
-        maxWidth: "1100px",
-        margin: "0 auto",
-        padding: "0.75rem 1rem 1.25rem",
-        display: "flex",
-        flexDirection: "column",
-        gap: "1rem",
-    } satisfies CSSProperties,
-    uploadHint: {
-        margin: "0.5rem 0 0",
-        color: "#475569",
-    } satisfies CSSProperties,
-    loadedRow: {
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        gap: "0.75rem",
-        textAlign: "left",
-    } satisfies CSSProperties,
-    loadedRowTextWrap: {
-        display: "flex",
-        alignItems: "center",
-        gap: "0.35rem",
-        minWidth: 0,
-        flex: 1,
-    } satisfies CSSProperties,
-    loadedFileName: {
-        minWidth: 0,
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        whiteSpace: "nowrap",
-        display: "inline-block",
-    } satisfies CSSProperties,
-    loadedDimensions: {
-        whiteSpace: "nowrap",
-        flexShrink: 0,
-    } satisfies CSSProperties,
-    replaceImageButton: {
-        padding: "0.5rem 0.75rem",
-        borderRadius: "8px",
-        border: "1px solid #cbd5e1",
-        background: "#fff",
-        color: "#0f172a",
-        cursor: "pointer",
-        flexShrink: 0,
-    } satisfies CSSProperties,
-    toolbarRow: {
-        display: "flex",
-        flexWrap: "wrap",
-        gap: "0.75rem",
-        alignItems: "flex-start",
-        justifyContent: "space-between",
-    } satisfies CSSProperties,
-    leftControlColumn: {
-        display: "flex",
-        flexDirection: "column",
-        gap: "0.5rem",
-    } satisfies CSSProperties,
-    modeButtonsRow: {
-        display: "flex",
-        gap: "0.5rem",
-        flexWrap: "wrap",
-    } satisfies CSSProperties,
-    modeButton: (active: boolean, disabled: boolean): CSSProperties => ({
-        padding: "0.55rem 0.8rem",
-        borderRadius: "8px",
-        border: active ? "1px solid #2563eb" : "1px solid #cbd5e1",
-        background: disabled ? "#f8fafc" : active ? "#dbeafe" : "#fff",
-        color: disabled ? "#94a3b8" : "#0f172a",
-        cursor: disabled ? "not-allowed" : "pointer",
-    }),
-    modeHint: {
-        color: "#64748b",
-        fontSize: "0.8rem",
-        marginTop: 0,
-    } satisfies CSSProperties,
-    sliderGrid: {
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-        gap: "0.75rem",
-        alignItems: "end",
-    } satisfies CSSProperties,
-    sliderGroup: {
-        display: "flex",
-        flexDirection: "column",
-        gap: "0.45rem",
-    } satisfies CSSProperties,
-    autoActionGroup: {
-        display: "flex",
-        flexDirection: "column",
-        gap: "0.45rem",
-    } satisfies CSSProperties,
-    autoRemoveButton: (disabled: boolean): CSSProperties => ({
-        padding: "0.6rem 0.9rem",
-        borderRadius: "8px",
-        border: "1px solid #2563eb",
-        background: disabled ? "#93c5fd" : "#2563eb",
-        color: "#fff",
-        cursor: disabled ? "not-allowed" : "pointer",
-        fontWeight: 600,
-    }),
-    autoHelperText: {
-        color: "#64748b",
-        fontSize: "0.85rem",
-    } satisfies CSSProperties,
-    sliderLabel: {
-        display: "flex",
-        flexDirection: "column",
-        gap: "0.35rem",
-    } satisfies CSSProperties,
-    toleranceHint: {
-        color: "#64748b",
-        fontSize: "0.8rem",
-    } satisfies CSSProperties,
-    actionsRow: {
-        display: "flex",
-        gap: "0.5rem",
-        flexWrap: "wrap",
-        alignItems: "center",
-    } satisfies CSSProperties,
-    secondaryActionButton: (disabled: boolean): CSSProperties => ({
-        padding: "0.55rem 0.8rem",
-        borderRadius: "8px",
-        border: "1px solid #cbd5e1",
-        background: disabled ? "#f1f5f9" : "#fff",
-        color: disabled ? "#94a3b8" : "#0f172a",
-        cursor: disabled ? "not-allowed" : "pointer",
-    }),
-    resetButton: (disabled: boolean): CSSProperties => ({
-        padding: "0.55rem 0.8rem",
-        borderRadius: "8px",
-        border: "1px solid #fecaca",
-        background: disabled ? "#ffe4e6" : "#fff1f2",
-        color: disabled ? "#f43f5e" : "#b91c1c",
-        cursor: disabled ? "not-allowed" : "pointer",
-    }),
-    canvasCard: {
-        border: "1px solid #cbd5e1",
-        padding: "0.75rem",
-        overflow: "auto",
-        background: "#fff",
-        display: "flex",
-        flexDirection: "column",
-        gap: "0.75rem",
-    } satisfies CSSProperties,
     canvasWrap: {
         width: "fit-content",
         maxWidth: "100%",
@@ -1310,8 +1123,4 @@ const styles = {
         boxShadow: "0 0 0 1px rgba(255, 255, 255, 0.8)",
         pointerEvents: "none",
     }),
-    downloadRow: {
-        display: "flex",
-        justifyContent: "center",
-    } satisfies CSSProperties,
 };

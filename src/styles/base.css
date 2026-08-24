@@ -1,0 +1,110 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    min-width: 320px;
+    background: var(--ui-color-page);
+    color: var(--ui-color-text);
+    font-family: var(--ui-font-sans);
+    line-height: var(--ui-line-height-body);
+    text-rendering: optimizeLegibility;
+}
+
+body {
+    min-height: 100vh;
+    margin: 0;
+    background: var(--ui-color-page);
+    color: var(--ui-color-text);
+}
+
+body.ui-scroll-locked {
+    overflow: hidden;
+}
+
+h1,
+h2,
+h3,
+p {
+    margin-top: 0;
+}
+
+h1,
+h2,
+h3 {
+    color: var(--ui-color-text);
+    line-height: var(--ui-line-height-tight);
+}
+
+a {
+    color: inherit;
+}
+
+button,
+input,
+select,
+textarea {
+    color: inherit;
+    font: inherit;
+}
+
+button,
+select,
+input[type="checkbox"],
+input[type="radio"],
+input[type="range"],
+input[type="color"] {
+    cursor: pointer;
+}
+
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+    cursor: not-allowed;
+}
+
+img,
+svg,
+canvas {
+    max-width: 100%;
+}
+
+::selection {
+    background: var(--ui-color-action);
+    color: var(--ui-color-action-text);
+}
+
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--ui-color-focus);
+    outline-offset: 3px;
+}
+
+[hidden] {
+    display: none !important;
+}
+
+.ui-sr-only {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

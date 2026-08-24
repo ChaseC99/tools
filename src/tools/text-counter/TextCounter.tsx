@@ -21,66 +21,26 @@ export default function TextCounter() {
     };
 
     return (
-        <div style={styles.container}>
-            <div style={styles.statsRow}>
+        <section className="ui-stack" aria-label="Text counter">
+            <div className="ui-result-grid" aria-live="polite">
                 {stats.map((stat) => (
-                    <div key={stat.label} style={styles.statCard}>
-                        <div style={styles.statValue}>{stat.value}</div>
-                        <div style={styles.statLabel}>{stat.label}</div>
+                    <div key={stat.label} className="ui-stat-card">
+                        <span className="ui-stat-value">{stat.value}</span>
+                        <span className="ui-stat-label">{stat.label}</span>
                     </div>
                 ))}
             </div>
-            <textarea
-                ref={textareaRef}
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                placeholder="Type or paste text here..."
-                style={styles.textarea}
-                spellCheck={false}
-            />
-        </div>
+            <label className="ui-field">
+                <span className="ui-label">Text</span>
+                <textarea
+                    className="ui-textarea ui-code-input"
+                    ref={textareaRef}
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    placeholder="Type or paste text here…"
+                    spellCheck={false}
+                />
+            </label>
+        </section>
     );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-    container: {
-        padding: "24px 20px",
-        maxWidth: "700px",
-        margin: "0 auto",
-        display: "flex",
-        flexDirection: "column",
-        gap: "16px",
-    },
-    textarea: {
-        width: "100%",
-        minHeight: "250px",
-        padding: "12px",
-        fontFamily: "monospace",
-        fontSize: "14px",
-        border: "1px solid #ccc",
-        borderRadius: "8px",
-        resize: "none",
-        overflow: "hidden",
-        boxSizing: "border-box",
-    },
-    statsRow: {
-        display: "flex",
-        gap: "12px",
-    },
-    statCard: {
-        flex: 1,
-        padding: "16px",
-        border: "1px solid #ccc",
-        borderRadius: "8px",
-        textAlign: "center",
-    },
-    statValue: {
-        fontSize: "28px",
-        fontWeight: "bold",
-    },
-    statLabel: {
-        fontSize: "13px",
-        color: "#666",
-        marginTop: "4px",
-    },
-};

@@ -4,37 +4,47 @@ const link = href || `/${id}`;
 const iconId = icon || id;
 ---
 
-<a class="card" href={link}>
-    <h2>{name}</h2>
-    <img src={`/icons/tools/${iconId}.svg`} alt={`${name} icon`} />
+<a class="tool-card" href={link}>
+    <span class="tool-card__name">{name}</span>
+    <img class="tool-card__icon" src={`/icons/tools/${iconId}.svg`} alt="" aria-hidden="true" />
 </a>
 
 <style>
-    .card {
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        margin: 8px;
-        padding: 8px;
+    .tool-card {
+        min-height: 4.75rem;
         display: flex;
-        flex-direction: row;
         align-items: center;
-        text-decoration: none;
-        color: inherit;
         justify-content: space-between;
+        gap: var(--ui-space-4);
+        padding: var(--ui-space-4);
+        border: 1px solid var(--ui-color-border);
+        border-radius: var(--ui-radius-lg);
+        background: var(--ui-color-surface);
+        color: var(--ui-color-text);
+        text-decoration: none;
+        box-shadow: var(--ui-shadow-sm);
+        transition: border-color var(--ui-motion-fast) var(--ui-ease-standard), background var(--ui-motion-fast) var(--ui-ease-standard), transform var(--ui-motion-fast) var(--ui-ease-standard), box-shadow var(--ui-motion-fast) var(--ui-ease-standard);
     }
 
-    .card:hover {
-        background-color: #f9f9f9;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        transform: scale(1.02);
+    .tool-card:hover {
+        border-color: var(--ui-color-border-strong);
+        background: var(--ui-color-surface-hover);
+        box-shadow: var(--ui-shadow-md);
+        transform: translateY(-2px);
     }
 
-    h2 {
-        font-size: 1rem;
+    .tool-card__name {
+        font-size: var(--ui-font-size-sm);
+        font-weight: 650;
     }
 
-    img {
-        height: 2rem;
+    .tool-card__icon {
         width: 2rem;
+        height: 2rem;
+        flex: none;
+    }
+
+    :global([data-theme="dark"]) .tool-card__icon {
+        filter: invert(1);
     }
 </style>

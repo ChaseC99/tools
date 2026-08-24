@@ -1,0 +1,397 @@
+---
+import PageLayout from "@layouts/PageLayout.astro";
+
+export function getStaticPaths() {
+    return import.meta.env.DEV
+        ? [{ params: { designSystem: "design-system" } }]
+        : [];
+}
+---
+
+<PageLayout title="Design System" description="Development-only component reference for the Tools design system.">
+    <div class="gallery">
+        <header class="gallery-intro ui-stack">
+            <span class="ui-section-label">Development reference</span>
+            <h2>Simple, neutral, and consistent.</h2>
+            <p class="ui-muted">Use the header toggle to inspect the full page theme, or compare the scoped light and dark examples below.</p>
+        </header>
+
+        <section class="gallery-section ui-stack" aria-labelledby="gallery-buttons">
+            <div class="ui-section-header">
+                <h2 id="gallery-buttons">Buttons and actions</h2>
+                <span class="ui-muted">Variants, sizes, and states</span>
+            </div>
+            <div class="ui-panel ui-stack">
+                <div class="ui-inline">
+                    <button class="ui-button" type="button">Primary</button>
+                    <button class="ui-button" data-variant="secondary" type="button">Secondary</button>
+                    <button class="ui-button" data-variant="ghost" type="button">Ghost</button>
+                    <button class="ui-button" data-variant="danger" type="button">Danger</button>
+                    <button class="ui-button" type="button" disabled>Disabled</button>
+                </div>
+                <div class="ui-inline">
+                    <button class="ui-button" data-size="sm" type="button">Small</button>
+                    <button class="ui-button" type="button">Default</button>
+                    <button class="ui-button" data-size="lg" type="button">Large</button>
+                    <button class="ui-button ui-icon-button" data-variant="secondary" type="button" aria-label="Example icon button">+</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="gallery-section ui-stack" aria-labelledby="gallery-fields">
+            <div class="ui-section-header">
+                <h2 id="gallery-fields">Fields and choices</h2>
+                <span class="ui-muted">Native controls, shared presentation</span>
+            </div>
+            <div class="ui-panel ui-grid">
+                <label class="ui-field">
+                    <span class="ui-label">Text input</span>
+                    <input class="ui-input" type="text" placeholder="Type something" />
+                    <span class="ui-hint">Optional supporting text.</span>
+                </label>
+                <label class="ui-field">
+                    <span class="ui-label">Select</span>
+                    <select class="ui-select">
+                        <option>First option</option>
+                        <option>Second option</option>
+                    </select>
+                </label>
+                <label class="ui-field">
+                    <span class="ui-label">Range <span class="ui-muted" data-gallery-range-output>50</span></span>
+                    <input class="ui-range" data-gallery-range type="range" value="50" />
+                </label>
+                <div class="ui-stack" data-gap="sm">
+                    <label class="ui-choice"><input type="checkbox" checked /> Checkbox</label>
+                    <label class="ui-choice"><input type="radio" name="gallery-radio" checked /> Radio one</label>
+                    <label class="ui-choice"><input type="radio" name="gallery-radio" /> Radio two</label>
+                    <label class="ui-choice">
+                        <span class="ui-switch">
+                            <input type="checkbox" checked />
+                            <span class="ui-switch-track"></span>
+                        </span>
+                        Switch
+                    </label>
+                </div>
+            </div>
+        </section>
+
+        <section class="gallery-section ui-stack" aria-labelledby="gallery-selection">
+            <div class="ui-section-header">
+                <h2 id="gallery-selection">Selection and file actions</h2>
+            </div>
+            <div class="ui-panel ui-stack">
+                <div class="gallery-segmented-examples">
+                    <div class="ui-segmented gallery-segmented" role="group" aria-label="Example period selection" data-gallery-segmented>
+                        <button class="ui-button" type="button" aria-pressed="true">Day</button>
+                        <button class="ui-button" type="button" aria-pressed="false">Week</button>
+                        <button class="ui-button" type="button" aria-pressed="false">Month</button>
+                    </div>
+                    <div class="ui-segmented gallery-segmented" role="group" aria-label="Disabled period selection">
+                        <button class="ui-button" type="button" aria-pressed="true" disabled>Day</button>
+                        <button class="ui-button" type="button" aria-pressed="false" disabled>Week</button>
+                        <button class="ui-button" type="button" aria-pressed="false" disabled>Month</button>
+                    </div>
+                </div>
+                <div class="ui-image-input-field">
+                  <div class="ui-dropzone ui-image-input is-empty" role="button" tabindex="0" aria-label="Choose an example image">
+                    <span class="ui-image-input__visual" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" focusable="false">
+                            <path d="M4.75 4.75h14.5v14.5H4.75z"></path>
+                            <circle cx="9" cy="9" r="1.5"></circle>
+                            <path d="m6.75 17 3.4-3.4 2.35 2.35 1.85-1.85 2.9 2.9"></path>
+                        </svg>
+                    </span>
+                    <span class="ui-image-input__content">
+                        <strong class="ui-image-input__title">Choose an image</strong>
+                    </span>
+                    <span class="ui-image-input__action" aria-hidden="true">Browse</span>
+                  </div>
+                  <p class="ui-image-input__support">JPG, PNG, WebP, or HEIC · Up to 20 MB</p>
+                </div>
+                <div class="ui-color-field">
+                    <input class="ui-color-input" type="color" value="#222222" aria-label="Example color" />
+                    <input class="ui-input gallery-color-value" value="#222222" aria-label="Example color value" />
+                </div>
+                <section class="ui-disclosure">
+                    <button class="ui-disclosure-toggle" type="button" aria-expanded="true" aria-controls="gallery-disclosure-content">
+                        <span class="ui-section-label">Disclosure</span>
+                        <span class="ui-disclosure-icon" aria-hidden="true">⌄</span>
+                    </button>
+                    <div id="gallery-disclosure-content" class="ui-disclosure-content">
+                        <p class="ui-muted">Grouped advanced controls live inside disclosures.</p>
+                    </div>
+                </section>
+            </div>
+        </section>
+
+        <section class="gallery-section ui-stack" aria-labelledby="gallery-feedback">
+            <div class="ui-section-header">
+                <h2 id="gallery-feedback">Surfaces and feedback</h2>
+            </div>
+            <div class="ui-result-grid">
+                <div class="ui-stat-card"><span class="ui-stat-value">24</span><span class="ui-stat-label">Tools</span></div>
+                <div class="ui-stat-card"><span class="ui-stat-value">3</span><span class="ui-stat-label">Frameworks</span></div>
+                <div class="ui-stat-card"><span class="ui-stat-value">2</span><span class="ui-stat-label">Themes</span></div>
+            </div>
+            <div class="ui-stack" data-gap="sm">
+                <p class="ui-alert">Informational feedback.</p>
+                <p class="ui-alert" data-variant="success">The action completed successfully.</p>
+                <p class="ui-alert" data-variant="warning">Review this value before continuing.</p>
+                <p class="ui-alert" data-variant="danger">Something needs attention.</p>
+            </div>
+            <div class="ui-inline">
+                <span class="ui-spinner" role="status" aria-label="Loading"></span>
+                <div class="ui-progress gallery-progress" aria-label="Example progress at 64 percent"><span></span></div>
+            </div>
+        </section>
+
+        <section class="gallery-section ui-stack" aria-labelledby="gallery-data">
+            <div class="ui-section-header">
+                <h2 id="gallery-data">Data and workspace patterns</h2>
+                <span class="ui-muted">Added during the full tool rollout</span>
+            </div>
+            <div class="gallery-pattern-grid">
+                <div class="ui-panel ui-stack">
+                    <div class="ui-section-header">
+                        <h3>Selection</h3>
+                        <span class="ui-badge" data-variant="success">Ready</span>
+                    </div>
+                    <div class="ui-selectable-grid">
+                        <button class="ui-selectable-card" type="button" aria-pressed="true">
+                            <span class="gallery-swatch gallery-swatch--soft" aria-hidden="true"></span>
+                            Neutral
+                        </button>
+                        <button class="ui-selectable-card" type="button" aria-pressed="false">
+                            <span class="gallery-swatch gallery-swatch--strong" aria-hidden="true"></span>
+                            Contrast
+                        </button>
+                    </div>
+                </div>
+                <div class="ui-panel ui-stack">
+                    <div class="ui-section-header">
+                        <h3>History</h3>
+                        <span class="ui-badge">3 rows</span>
+                    </div>
+                    <div class="ui-data-list">
+                        <div class="ui-data-row ui-data-header"><span>Lap</span><span>Time</span></div>
+                        <div class="ui-data-row"><span>1</span><span class="ui-mono">00:12.42</span></div>
+                        <div class="ui-data-row"><span>2</span><span class="ui-mono">00:11.96</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-table-wrap">
+                <table class="ui-table">
+                    <thead><tr><th>Period</th><th>Balance</th><th>Change</th></tr></thead>
+                    <tbody>
+                        <tr><td>Year 1</td><td>$12,450</td><td>+$2,450</td></tr>
+                        <tr><td>Year 2</td><td>$15,182</td><td>+$2,732</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="ui-empty-state">Results appear here after the first calculation.</div>
+        </section>
+
+        <section class="gallery-section ui-stack" aria-labelledby="gallery-overlays">
+            <div class="ui-section-header">
+                <h2 id="gallery-overlays">Toolbars and overlays</h2>
+                <span class="ui-muted">Compact actions and focused configuration</span>
+            </div>
+            <div class="gallery-overlay-grid">
+                <div class="ui-panel ui-stack">
+                    <span class="ui-section-label">Floating toolbar</span>
+                    <div class="ui-floating-panel">
+                        <button class="ui-button ui-icon-button" data-variant="secondary" type="button" aria-label="Undo example">↶</button>
+                        <button class="ui-button" data-variant="secondary" data-size="sm" type="button" aria-pressed="true">Draw</button>
+                        <button class="ui-button" data-variant="ghost" data-size="sm" type="button">Clear</button>
+                    </div>
+                </div>
+                <div class="gallery-modal-stage">
+                    <div class="ui-modal ui-stack" role="dialog" aria-modal="false" aria-labelledby="gallery-modal-title">
+                        <div class="ui-section-header">
+                            <h3 id="gallery-modal-title">Clock settings</h3>
+                            <button class="ui-button ui-icon-button" data-variant="ghost" type="button" aria-label="Close example dialog">×</button>
+                        </div>
+                        <label class="ui-field">
+                            <span class="ui-label">Minutes per player</span>
+                            <input class="ui-input" type="number" value="10" />
+                        </label>
+                        <div class="ui-action-bar">
+                            <button class="ui-button" data-variant="secondary" type="button">Cancel</button>
+                            <button class="ui-button" type="button">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="gallery-section ui-stack" aria-labelledby="gallery-themes">
+            <div class="ui-section-header">
+                <h2 id="gallery-themes">Theme scopes</h2>
+            </div>
+            <div class="gallery-themes">
+                <div class="gallery-theme ui-panel ui-stack" data-theme="light">
+                    <span class="ui-section-label">Light</span>
+                    <input class="ui-input" value="Light surface" aria-label="Light theme example" />
+                    <button class="ui-button" type="button">Action</button>
+                </div>
+                <div class="gallery-theme ui-panel ui-stack" data-theme="dark">
+                    <span class="ui-section-label">Dark</span>
+                    <input class="ui-input" value="Dark surface" aria-label="Dark theme example" />
+                    <button class="ui-button" type="button">Action</button>
+                </div>
+            </div>
+        </section>
+    </div>
+</PageLayout>
+
+<style>
+    .gallery {
+        display: grid;
+        gap: var(--ui-space-12);
+    }
+
+    .gallery-intro {
+        max-width: 42rem;
+        padding-block: var(--ui-space-6) var(--ui-space-2);
+    }
+
+    .gallery-intro h2 {
+        margin: 0;
+        font-size: var(--ui-font-size-2xl);
+    }
+
+    .gallery-section {
+        gap: var(--ui-space-5);
+    }
+
+    .gallery-section h2 {
+        margin: 0;
+        font-size: var(--ui-font-size-lg);
+    }
+
+    .gallery-section h3 {
+        margin: 0;
+        font-size: var(--ui-font-size-md);
+    }
+
+    .gallery-pattern-grid,
+    .gallery-overlay-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--ui-space-5);
+    }
+
+    .gallery-swatch {
+        height: 4rem;
+        border-radius: var(--ui-radius-md);
+        background: var(--ui-color-surface-inset);
+    }
+
+    .gallery-swatch--strong {
+        background: var(--ui-color-text);
+    }
+
+    .gallery-modal-stage {
+        display: grid;
+        place-items: center;
+        min-height: 20rem;
+        padding: var(--ui-space-6);
+        border-radius: var(--ui-radius-lg);
+        background: var(--ui-color-overlay);
+    }
+
+    .gallery-modal-stage .ui-modal {
+        position: static;
+    }
+
+    .gallery-color-value {
+        max-width: 12rem;
+        font-family: var(--ui-font-mono);
+    }
+
+    .gallery-segmented {
+        width: min(100%, 30rem);
+    }
+
+    .gallery-segmented-examples {
+        display: grid;
+        gap: var(--ui-space-3);
+    }
+
+    .gallery-progress {
+        max-width: 20rem;
+        --ui-progress: 64%;
+    }
+
+    .gallery-themes {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--ui-space-4);
+    }
+
+    .gallery-theme {
+        background: var(--ui-color-surface);
+        color: var(--ui-color-text);
+    }
+
+    @media (max-width: 640px) {
+        .gallery-section > .ui-section-header {
+            align-items: flex-start;
+            flex-direction: column;
+            gap: var(--ui-space-1);
+        }
+
+        .gallery-themes,
+        .gallery-pattern-grid,
+        .gallery-overlay-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+{import.meta.env.DEV && (
+    <script is:inline>
+        const disclosureToggle = document.querySelector(".gallery .ui-disclosure-toggle");
+        const disclosureContent = document.getElementById("gallery-disclosure-content");
+
+        disclosureToggle?.addEventListener("click", () => {
+            const isOpen = disclosureToggle.getAttribute("aria-expanded") === "true";
+            disclosureToggle.setAttribute("aria-expanded", String(!isOpen));
+            if (disclosureContent) disclosureContent.hidden = isOpen;
+        });
+
+        const range = document.querySelector("[data-gallery-range]");
+        const rangeOutput = document.querySelector("[data-gallery-range-output]");
+
+        range?.addEventListener("input", () => {
+            if (rangeOutput) rangeOutput.textContent = range.value;
+        });
+
+        const segmentButtons = Array.from(document.querySelectorAll("[data-gallery-segmented] .ui-button"));
+
+        const selectSegment = (selected) => {
+            segmentButtons.forEach((button) => {
+                button.setAttribute("aria-pressed", String(button === selected));
+            });
+        };
+
+        segmentButtons.forEach((button, index) => {
+            button.addEventListener("click", () => selectSegment(button));
+            button.addEventListener("keydown", (event) => {
+                const keys = ["ArrowLeft", "ArrowRight", "Home", "End"];
+                if (!keys.includes(event.key)) return;
+                event.preventDefault();
+
+                const targetIndex = event.key === "Home"
+                    ? 0
+                    : event.key === "End"
+                        ? segmentButtons.length - 1
+                        : (index + (event.key === "ArrowRight" ? 1 : -1) + segmentButtons.length) % segmentButtons.length;
+
+                const target = segmentButtons[targetIndex];
+                selectSegment(target);
+                target.focus();
+            });
+        });
+    </script>
+)}

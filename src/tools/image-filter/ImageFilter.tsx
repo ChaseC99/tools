@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { loadImage, canvasToBlob, decodeHeic, cloneImageData } from "@tools/shared/imageUtils";
-import ImageDropZone from "@tools/shared/ImageDropZone";
+import ImageInput from "@tools/shared/ImageInput";
 import ErrorMessage from "@tools/shared/ErrorMessage";
 import DownloadButton from "@tools/shared/DownloadButton";
-import Spinner from "@tools/shared/Spinner";
 import { FILTERS, applyFilter, type FilterId } from "./filters";
 
 const THUMB_MAX = 80;
@@ -160,50 +159,36 @@ export default function ImageFilter() {
 
     if (!file) {
         return (
-            <div style={styles.container}>
-                <ImageDropZone
+            <div className="ui-stack">
+                <ImageInput
                     onFile={handleFile}
                     dragging={dragging}
                     onDraggingChange={setDragging}
                     accept="image/jpeg,image/png,image/webp,image/gif,.heic,.heif"
-                >
-                    {processing ? (
-                        <div style={styles.spinnerWrap}>
-                            <Spinner size={28} color="#4a90d9" />
-                            <p style={{ margin: 0, color: "#666" }}>Loading image...</p>
-                        </div>
-                    ) : (
-                        <div>
-                            <p style={{ margin: 0, fontSize: "1.1rem", color: "#333" }}>
-                                Drop an image here or click to upload
-                            </p>
-                            <p style={{ margin: "8px 0 0", fontSize: "0.85rem", color: "#999" }}>
-                                JPG, PNG, WebP, GIF, HEIC
-                            </p>
-                        </div>
-                    )}
-                </ImageDropZone>
+                    formats={["JPG", "PNG", "WebP", "GIF", "HEIC"]}
+                    loading={processing}
+                    loadingLabel="Preparing your image…"
+                />
                 <ErrorMessage message={error} />
-                <p style={styles.note}>All processing happens in your browser. Images are never uploaded.</p>
+                <p className="ui-hint" style={{ margin: 0, textAlign: "center" }}>
+                    Preview and adjust filters locally. Images are never uploaded.
+                </p>
             </div>
         );
     }
 
     return (
-        <div style={styles.container}>
+        <div className="ui-stack">
             <canvas
                 ref={previewCanvasRef}
-                style={styles.canvas}
+                className="ui-media-preview"
             />
 
-            <div style={styles.grid}>
+            <div className="ui-selectable-grid">
                 <button
                     type="button"
-                    style={{
-                        ...styles.thumbBtn,
-                        borderColor: activeFilter === null ? "#4a90d9" : "#d1d5db",
-                        borderWidth: activeFilter === null ? 2 : 1,
-                    }}
+                    className="ui-selectable-card"
+                    aria-pressed={activeFilter === null}
                     onClick={() => handleFilterSelect(null)}
                 >
                     {thumbnails.get("original") ? (
@@ -211,17 +196,14 @@ export default function ImageFilter() {
                     ) : (
                         <div style={styles.thumbPlaceholder} />
                     )}
-                    <span style={styles.thumbLabel}>Original</span>
+                    <span className="ui-stat-label">Original</span>
                 </button>
                 {FILTERS.map((filter) => (
                     <button
                         key={filter.id}
                         type="button"
-                        style={{
-                            ...styles.thumbBtn,
-                            borderColor: activeFilter === filter.id ? "#4a90d9" : "#d1d5db",
-                            borderWidth: activeFilter === filter.id ? 2 : 1,
-                        }}
+                        className="ui-selectable-card"
+                        aria-pressed={activeFilter === filter.id}
                         onClick={() => handleFilterSelect(filter.id)}
                     >
                         {thumbnails.get(filter.id) ? (
@@ -229,35 +211,35 @@ export default function ImageFilter() {
                         ) : (
                             <div style={styles.thumbPlaceholder} />
                         )}
-                        <span style={styles.thumbLabel}>{filter.label}</span>
+                        <span className="ui-stat-label">{filter.label}</span>
                     </button>
                 ))}
             </div>
 
             {activeConfig?.hasSlider && (
-                <div style={styles.sliderWrap}>
-                    <label style={styles.sliderLabel}>
+                <label className="ui-field">
+                    <span className="ui-label">
                         {activeConfig.sliderLabel}: {sliderValue}
-                    </label>
+                    </span>
                     <input
+                        className="ui-range"
                         type="range"
                         min={activeConfig.sliderMin}
                         max={activeConfig.sliderMax}
                         value={sliderValue}
                         onChange={(e) => setSliderValue(Number(e.target.value))}
-                        style={styles.slider}
                     />
-                </div>
+                </label>
             )}
 
-            <div style={styles.actions}>
+            <div className="ui-action-bar">
                 <DownloadButton
                     filename="filtered-image.png"
                     onClick={handleDownload}
                     disabled={processing}
                     label={processing ? "Processing..." : "Download PNG"}
                 />
-<button type="button" onClick={handleReplace} style={styles.btn}>
+                <button className="ui-button" data-variant="secondary" type="button" onClick={handleReplace}>
                     Replace Image
                 </button>
             </div>
@@ -268,39 +250,6 @@ export default function ImageFilter() {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-    container: {
-        padding: "24px 20px",
-        maxWidth: "800px",
-        margin: "0 auto",
-        display: "flex",
-        flexDirection: "column",
-        gap: "16px",
-    },
-    canvas: {
-        maxWidth: "100%",
-        height: "auto",
-        borderRadius: "8px",
-        border: "1px solid #d1d5db",
-        display: "block",
-        margin: "0 auto",
-    },
-    grid: {
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(90px, 1fr))",
-        gap: "8px",
-    },
-    thumbBtn: {
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: "4px",
-        padding: "6px",
-        borderRadius: "8px",
-        borderStyle: "solid",
-        background: "#fff",
-        cursor: "pointer",
-        transition: "border-color 0.15s",
-    },
     thumbImg: {
         width: "100%",
         aspectRatio: "1",
@@ -311,53 +260,7 @@ const styles: Record<string, React.CSSProperties> = {
     thumbPlaceholder: {
         width: "100%",
         aspectRatio: "1",
-        background: "#f3f4f6",
-        borderRadius: "4px",
-    },
-    thumbLabel: {
-        fontSize: "11px",
-        color: "#555",
-        textAlign: "center",
-        lineHeight: "1.2",
-    },
-    sliderWrap: {
-        display: "flex",
-        flexDirection: "column",
-        gap: "6px",
-    },
-    sliderLabel: {
-        fontSize: "14px",
-        color: "#333",
-        fontWeight: 500,
-    },
-    slider: {
-        width: "100%",
-        cursor: "pointer",
-    },
-    actions: {
-        display: "flex",
-        gap: "10px",
-        flexWrap: "wrap",
-        alignItems: "center",
-    },
-    btn: {
-        padding: "8px 20px",
-        border: "1px solid #ccc",
-        borderRadius: "6px",
-        background: "#fff",
-        cursor: "pointer",
-        fontSize: "14px",
-    },
-    spinnerWrap: {
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: "10px",
-    },
-    note: {
-        margin: 0,
-        fontSize: "0.8rem",
-        color: "#999",
-        textAlign: "center",
+        background: "var(--ui-color-surface-inset)",
+        borderRadius: "var(--ui-radius-sm)",
     },
 };

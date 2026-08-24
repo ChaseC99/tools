@@ -75,12 +75,12 @@
         user-select: none;
         text-align: center;
         font-size: 8px;
-        color: #999;
+        color: var(--ui-color-text-subtle);
         vertical-align: middle;
     }
 
     .toggle:hover {
-        color: #333;
+        color: var(--ui-color-text);
     }
 
     .toggle-spacer {
@@ -106,25 +106,25 @@
     }
 
     .bracket {
-        color: #666;
+        color: var(--ui-color-text-muted);
     }
 
     .colon {
-        color: #666;
+        color: var(--ui-color-text-muted);
     }
 
     .collapsed-preview {
         cursor: pointer;
-        color: #666;
+        color: var(--ui-color-text-muted);
     }
 
     .collapsed-preview:hover {
-        background: #f0f0f0;
+        background: var(--ui-color-surface-hover);
         border-radius: 3px;
     }
 
     .ellipsis {
-        color: #999;
+        color: var(--ui-color-text-subtle);
         font-style: italic;
         font-size: 0.9em;
     }

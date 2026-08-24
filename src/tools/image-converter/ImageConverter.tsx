@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { loadImage, canvasToBlob, decodeHeic } from "@tools/shared/imageUtils";
-import ImageDropZone from "@tools/shared/ImageDropZone";
+import ImageInput from "@tools/shared/ImageInput";
 import Spinner from "@tools/shared/Spinner";
 import DownloadButton from "@tools/shared/DownloadButton";
+import ErrorMessage from "@tools/shared/ErrorMessage";
 
 type Format = "heic" | "png" | "jpg" | "webp" | "svg" | "ico";
 
@@ -340,92 +341,30 @@ export default function ImageConverter() {
     const previewSrc = to === "ico" ? resultPreviewUrl : resultUrl;
 
     return (
-        <div style={{ maxWidth: 600, margin: "0 auto", padding: "1rem" }}>
-            {/* Drop zone */}
-            <ImageDropZone
+        <section className="image-converter-flow ui-stack">
+            <p className="ui-hint" style={{ textAlign: "center" }}>
+                Choose a source image, then select the output format below.
+            </p>
+            <ImageInput
                 onFile={handleFile}
                 dragging={dragging}
                 onDraggingChange={setDragging}
                 accept="image/*,.heic,.heif"
-                theme="dark"
-                style={{ padding: inputPreview ? "1rem" : "2rem" }}
-            >
-                {inputPreview && (
-                    <img
-                        src={inputPreview}
-                        alt="Input preview"
-                        style={{
-                            maxWidth: "100%",
-                            maxHeight: 200,
-                            display: "block",
-                            margin: "0 auto 0.5rem",
-                        }}
-                    />
-                )}
-                <p
-                    style={{
-                        margin: 0,
-                        color: "#999",
-                        fontSize: "0.9rem",
-                        wordBreak: "break-all",
-                    }}
-                >
-                    {file
-                        ? file.name
-                        :
-                        <span>
-                            Drop an image here or click to select
-                            <br />
-                            <br />
-                            Accepted formats: HEIC, PNG, JPG, WebP, SVG
-                        </span>
-                    }
-                </p>
-            </ImageDropZone>
+                formats={["HEIC", "PNG", "JPG", "WebP", "SVG"]}
+                fileName={file?.name}
+                previewUrl={inputPreview}
+                previewAlt={file ? `Preview of ${file.name}` : "Selected image preview"}
+            />
 
-            {/* Arrow */}
-            <div
-                style={{
-                    textAlign: "center",
-                    fontSize: "1.5rem",
-                    color: "#555",
-                    margin: "0.75rem 0",
-                }}
-            >
-                ↓
-            </div>
+            <div className="image-converter-flow__arrow" aria-hidden="true">↓</div>
 
-            {/* Format dropdown — always visible */}
-            <div
-                style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: "0.75rem",
-                    marginBottom: "1.5rem",
-                }}
-            >
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.5rem",
-                    }}
-                >
-                    <span style={{ color: "#999", fontSize: "0.9rem" }}>
-                        Convert to:
-                    </span>
+            <div className="image-converter-flow__options ui-panel ui-stack" data-variant="inset">
+                <label className="ui-field">
+                    <span className="ui-label">Convert to</span>
                     <select
+                        className="ui-select"
                         value={to}
                         onChange={(e) => setTo(e.target.value as Format)}
-                        style={{
-                            padding: "6px 12px",
-                            borderRadius: 6,
-                            border: "1px solid #555",
-                            backgroundColor: "#1a1a2e",
-                            color: "#eee",
-                            fontSize: "0.9rem",
-                        }}
                     >
                         {outputs.map((fmt) => (
                             <option key={fmt} value={fmt}>
@@ -433,27 +372,13 @@ export default function ImageConverter() {
                             </option>
                         ))}
                     </select>
-                </div>
+                </label>
 
-                {/* Quality slider for lossy outputs */}
                 {isLossyOutput(to) && (
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "0.5rem",
-                        }}
-                    >
-                        <label
-                            style={{
-                                color: "#999",
-                                fontSize: "0.85rem",
-                                whiteSpace: "nowrap",
-                            }}
-                        >
-                            Quality: {Math.round(quality * 100)}%
-                        </label>
+                    <label className="ui-field">
+                        <span className="ui-label">Quality: {Math.round(quality * 100)}%</span>
                         <input
+                            className="ui-range"
                             type="range"
                             min="0.1"
                             max="1"
@@ -462,30 +387,15 @@ export default function ImageConverter() {
                             onChange={(e) =>
                                 setQuality(parseFloat(e.target.value))
                             }
-                            style={{ width: 120 }}
                         />
-                    </div>
+                    </label>
                 )}
 
-                {/* SVG width input */}
                 {from === "svg" && to === "png" && (
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "0.5rem",
-                        }}
-                    >
-                        <label
-                            style={{
-                                color: "#999",
-                                fontSize: "0.85rem",
-                                whiteSpace: "nowrap",
-                            }}
-                        >
-                            Width:
-                        </label>
+                    <label className="ui-field">
+                        <span className="ui-label">Width (px)</span>
                         <input
+                            className="ui-input"
                             type="number"
                             min="1"
                             max="8192"
@@ -498,56 +408,16 @@ export default function ImageConverter() {
                                     ),
                                 )
                             }
-                            style={{
-                                width: 80,
-                                padding: "4px 8px",
-                                borderRadius: 6,
-                                border: "1px solid #555",
-                                backgroundColor: "#1a1a2e",
-                                color: "#eee",
-                                fontSize: "0.85rem",
-                            }}
                         />
-                        <span
-                            style={{
-                                color: "#999",
-                                fontSize: "0.85rem",
-                            }}
-                        >
-                            px
-                        </span>
-                    </div>
+                    </label>
                 )}
 
-                {/* ICO size checkboxes */}
                 {to === "ico" && (
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "0.75rem",
-                        }}
-                    >
-                        <span
-                            style={{
-                                color: "#999",
-                                fontSize: "0.85rem",
-                            }}
-                        >
-                            Sizes:
-                        </span>
-                        {ICO_SIZES.map((size) => (
-                            <label
-                                key={size}
-                                style={{
-                                    cursor: "pointer",
-                                    color: "#ccc",
-                                    fontSize: "0.85rem",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "0.25rem",
-                                }}
-                            >
+                    <div className="ui-field">
+                        <span className="ui-label">Sizes</span>
+                        <div className="ui-inline">
+                          {ICO_SIZES.map((size) => (
+                            <label key={size} className="ui-choice">
                                 <input
                                     type="checkbox"
                                     checked={icoSizes.includes(size)}
@@ -555,108 +425,51 @@ export default function ImageConverter() {
                                 />
                                 {size}
                             </label>
-                        ))}
+                          ))}
+                        </div>
                     </div>
                 )}
             </div>
 
-            {/* Arrow */}
-            <div
-                style={{
-                    textAlign: "center",
-                    fontSize: "1.5rem",
-                    color: "#555",
-                    margin: "0 0 0.75rem",
-                }}
-            >
-                ↓
-            </div>
+            <div className="image-converter-flow__arrow" aria-hidden="true">↓</div>
 
-            {/* Output card */}
-            <div
-                style={{
-                    border: "1px solid #333",
-                    borderRadius: 10,
-                    backgroundColor: "rgba(255, 255, 255, 0.03)",
-                    padding: "1.5rem",
-                    textAlign: "center",
-                    minHeight: 100,
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                }}
-            >
-                {/* Loading spinner */}
+            <div className="image-converter-flow__output ui-result-card ui-stack" aria-live="polite">
                 {converting && (
-                    <div style={{ color: "#999" }}>
+                    <div className="ui-stack" data-gap="sm">
                         <Spinner />
-                        <p style={{ marginTop: "0.5rem", fontSize: "0.9rem" }}>
-                            Converting...
-                        </p>
+                        <p className="ui-muted">Converting…</p>
                     </div>
                 )}
 
-                {/* Error */}
-                {error && !converting && (
-                    <p style={{ color: "#e55", margin: 0 }}>{error}</p>
-                )}
+                {!converting && <ErrorMessage message={error} />}
 
-                {/* Result */}
                 {resultUrl && !converting && !error && (
                     <>
                         {previewSrc && (
                             <img
                                 src={previewSrc}
                                 alt="Converted result"
-                                style={{ maxWidth: "100%", maxHeight: 300 }}
+                                className="image-converter-flow__preview"
                             />
                         )}
-                        <p
-                            style={{
-                                color: "#777",
-                                fontSize: "0.8rem",
-                                margin: "0.5rem 0",
-                                wordBreak: "break-all",
-                                maxWidth: "100%",
-                            }}
-                        >
+                        <p className="ui-muted image-converter-flow__filename">
                             {resultName}
                         </p>
                         <DownloadButton
                             href={resultUrl}
                             filename={resultName}
-                            theme="dark"
                         />
                     </>
                 )}
 
-                {/* Empty state */}
                 {!resultUrl && !converting && !error && (
-                    <p
-                        style={{
-                            color: "#555",
-                            margin: 0,
-                            fontSize: "0.9rem",
-                        }}
-                    >
-                        Output will appear here
-                    </p>
+                    <div className="ui-empty-state">Output will appear here.</div>
                 )}
             </div>
 
-            <p
-                style={{
-                    color: "#888",
-                    fontSize: "0.85rem",
-                    textAlign: "center",
-                    marginBottom: "1.5rem",
-                    lineHeight: 1.5,
-                }}
-            >
-                All conversions happen in your browser — no
-                images are saved or uploaded to any server.
+            <p className="ui-hint" style={{ textAlign: "center" }}>
+                All conversions happen in your browser—no images are saved or uploaded.
             </p>
-        </div>
+        </section>
     );
 }

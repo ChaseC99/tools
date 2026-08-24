@@ -14,82 +14,75 @@ export default function TextDiff() {
     const hasDiff = original !== "" || modified !== "";
 
     return (
-        <div style={styles.container}>
-            <div style={styles.inputs}>
-                <div style={styles.inputPanel}>
-                    <label style={styles.label}>Original</label>
+        <section className="ui-stack" data-gap="lg" aria-label="Text comparison">
+            <div className="ui-grid ui-grid--two">
+                <label className="ui-field">
+                    <span className="ui-label">Original</span>
                     <textarea
+                        className="ui-textarea ui-code-input"
                         value={original}
                         onChange={(e) => setOriginal(e.target.value)}
-                        placeholder="Paste original text..."
-                        style={styles.textarea}
+                        placeholder="Paste original text…"
                         spellCheck={false}
                     />
-                </div>
-                <div style={styles.inputPanel}>
-                    <label style={styles.label}>Modified</label>
+                </label>
+                <label className="ui-field">
+                    <span className="ui-label">Modified</span>
                     <textarea
+                        className="ui-textarea ui-code-input"
                         value={modified}
                         onChange={(e) => setModified(e.target.value)}
-                        placeholder="Paste modified text..."
-                        style={styles.textarea}
+                        placeholder="Paste modified text…"
                         spellCheck={false}
                     />
-                </div>
+                </label>
             </div>
 
             {hasDiff && (
                 <>
-                    <div style={styles.toggleRow}>
+                    <div className="ui-segmented ui-self-center" role="group" aria-label="Diff view">
                         <button
+                            className="ui-button"
                             onClick={() => setView("inline")}
-                            style={view === "inline" ? { ...styles.toggleBtn, ...styles.toggleActive } : styles.toggleBtn}
+                            aria-pressed={view === "inline"}
                         >
                             Inline
                         </button>
                         <button
+                            className="ui-button"
                             onClick={() => setView("side-by-side")}
-                            style={view === "side-by-side" ? { ...styles.toggleBtn, ...styles.toggleActive } : styles.toggleBtn}
+                            aria-pressed={view === "side-by-side"}
                         >
                             Side by Side
                         </button>
                     </div>
 
                     {view === "inline" ? (
-                        <pre style={styles.output}>
+                        <pre className="ui-code-panel" aria-label="Inline differences">
                             {charDiff.map((part, i) => (
                                 <span
                                     key={i}
-                                    style={{
-                                        backgroundColor: part.added ? "#d4edda" : part.removed ? "#f8d7da" : "transparent",
-                                        textDecoration: part.removed ? "line-through" : "none",
-                                    }}
+                                    className={part.added ? "ui-diff-added" : part.removed ? "ui-diff-removed" : undefined}
                                 >
                                     {part.value}
                                 </span>
                             ))}
                         </pre>
                     ) : (
-                        <div style={styles.sideBySide}>
-                            <pre style={styles.sidePanel}>
+                        <div className="ui-grid ui-grid--two">
+                            <pre className="ui-code-panel" aria-label="Original differences">
                                 {lineDiff.map((part, i) =>
                                     !part.added ? (
-                                        <span
-                                            key={i}
-                                            style={{ backgroundColor: part.removed ? "#f8d7da" : "transparent" }}
-                                        >
+                                        <span key={i} className={part.removed ? "ui-diff-removed" : undefined}>
                                             {part.value}
                                         </span>
                                     ) : null
                                 )}
                             </pre>
-                            <pre style={styles.sidePanel}>
+                            <pre className="ui-code-panel" aria-label="Modified differences">
                                 {lineDiff.map((part, i) =>
                                     !part.removed ? (
-                                        <span
-                                            key={i}
-                                            style={{ backgroundColor: part.added ? "#d4edda" : "transparent" }}
-                                        >
+                                        <span key={i} className={part.added ? "ui-diff-added" : undefined}>
                                             {part.value}
                                         </span>
                                     ) : null
@@ -99,87 +92,7 @@ export default function TextDiff() {
                     )}
                 </>
             )}
-        </div>
+            {!hasDiff && <div className="ui-empty-state">Enter text in either field to see the differences.</div>}
+        </section>
     );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-    container: {
-        padding: "24px 20px",
-        maxWidth: "1000px",
-        margin: "0 auto",
-        display: "flex",
-        flexDirection: "column",
-        gap: "16px",
-    },
-    inputs: {
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        gap: "16px",
-    },
-    inputPanel: {
-        display: "flex",
-        flexDirection: "column",
-        gap: "8px",
-    },
-    label: {
-        fontWeight: "bold",
-        fontSize: "14px",
-    },
-    textarea: {
-        width: "100%",
-        minHeight: "200px",
-        padding: "12px",
-        fontFamily: "monospace",
-        fontSize: "13px",
-        border: "1px solid #ccc",
-        borderRadius: "8px",
-        resize: "vertical",
-        boxSizing: "border-box",
-    },
-    toggleRow: {
-        display: "flex",
-        gap: "8px",
-        justifyContent: "center",
-    },
-    toggleBtn: {
-        padding: "6px 16px",
-        border: "1px solid #ccc",
-        borderRadius: "6px",
-        background: "#fff",
-        cursor: "pointer",
-        fontSize: "13px",
-    },
-    toggleActive: {
-        background: "#333",
-        color: "#fff",
-        borderColor: "#333",
-    },
-    output: {
-        padding: "12px",
-        fontFamily: "monospace",
-        fontSize: "13px",
-        border: "1px solid #ccc",
-        borderRadius: "8px",
-        background: "#fafafa",
-        overflow: "auto",
-        whiteSpace: "pre-wrap",
-        margin: 0,
-    },
-    sideBySide: {
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        gap: "16px",
-    },
-    sidePanel: {
-        padding: "12px",
-        fontFamily: "monospace",
-        fontSize: "13px",
-        border: "1px solid #ccc",
-        borderRadius: "8px",
-        background: "#fafafa",
-        overflow: "auto",
-        whiteSpace: "pre-wrap",
-        margin: 0,
-    },
-};

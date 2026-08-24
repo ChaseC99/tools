@@ -196,6 +196,7 @@ export default function Teleprompter() {
                 }}
             >
                 <div
+                    className="ui-floating-panel"
                     style={{
                         ...styles.playbackControlsTop,
                         opacity: isToolbarHovered ? 1 : 0.58,
@@ -208,9 +209,11 @@ export default function Teleprompter() {
                     <div style={styles.toolbarGroup}>
                         {alignOrder.map((mode) => (
                             <button
+                                className="ui-button ui-icon-button"
                                 key={mode}
                                 type="button"
                                 aria-label={`Align ${mode}`}
+                                aria-pressed={textAlign === mode}
                                 onClick={() => setTextAlign(mode)}
                                 style={{
                                     ...styles.alignIconButton,
@@ -258,6 +261,7 @@ export default function Teleprompter() {
                         <label style={styles.toolbarGroup}>
                             <span style={styles.toolbarLabel}>Speed {speed}</span>
                             <input
+                                className="ui-range"
                                 type="range"
                                 min={MIN_SPEED}
                                 max={MAX_SPEED}
@@ -270,6 +274,7 @@ export default function Teleprompter() {
                         <label style={styles.toolbarGroup}>
                             <span style={styles.toolbarLabel}>Size {fontSize}</span>
                             <input
+                                className="ui-range"
                                 type="range"
                                 min={MIN_SIZE}
                                 max={MAX_SIZE}
@@ -282,6 +287,7 @@ export default function Teleprompter() {
 
                     <div style={styles.toolbarGroup}>
                         <button
+                            className="ui-button"
                             type="button"
                             style={{
                                 ...styles.controlButton,
@@ -301,6 +307,7 @@ export default function Teleprompter() {
                             {isPaused ? "Resume" : "Pause"}
                         </button>
                         <button
+                            className="ui-button"
                             type="button"
                             style={{
                                 ...styles.controlButton,
@@ -313,6 +320,7 @@ export default function Teleprompter() {
                             Restart
                         </button>
                         <button
+                            className="ui-button"
                             type="button"
                             style={{
                                 ...styles.controlButton,
@@ -348,23 +356,24 @@ export default function Teleprompter() {
     }
 
     return (
-        <section style={styles.setupRoot}>
-            <h1 style={styles.title}>Teleprompter</h1>
+        <section className="ui-stack" data-gap="lg">
+            <label className="ui-field" htmlFor="teleprompter-text">
+                <span className="ui-label">Script</span>
+                <textarea
+                    className="ui-textarea ui-code-input"
+                    id="teleprompter-text"
+                    value={text}
+                    onChange={(event) => setText(event.target.value)}
+                    placeholder="Paste your script here…"
+                    rows={12}
+                />
+            </label>
 
-            <label htmlFor="teleprompter-text" style={styles.label}>Script</label>
-            <textarea
-                id="teleprompter-text"
-                value={text}
-                onChange={(event) => setText(event.target.value)}
-                placeholder="Paste your script here..."
-                rows={12}
-                style={styles.textarea}
-            />
-
-            <div style={styles.controlsGrid}>
-                <label style={styles.sliderLabel}>
-                    <span>Speed: {speed} px/s</span>
+            <div className="ui-grid">
+                <label className="ui-field">
+                    <span className="ui-label">Speed: {speed} px/s</span>
                     <input
+                        className="ui-range"
                         type="range"
                         min={MIN_SPEED}
                         max={MAX_SPEED}
@@ -373,9 +382,10 @@ export default function Teleprompter() {
                     />
                 </label>
 
-                <label style={styles.sliderLabel}>
-                    <span>Text size: {fontSize}px</span>
+                <label className="ui-field">
+                    <span className="ui-label">Text size: {fontSize}px</span>
                     <input
+                        className="ui-range"
                         type="range"
                         min={MIN_SIZE}
                         max={MAX_SIZE}
@@ -384,9 +394,9 @@ export default function Teleprompter() {
                     />
                 </label>
 
-                <fieldset style={styles.themeFieldset}>
-                    <legend style={styles.themeLegend}>Theme</legend>
-                    <label style={styles.themeOption}>
+                <fieldset className="ui-panel ui-stack" data-gap="sm">
+                    <legend className="ui-label">Theme</legend>
+                    <label className="ui-choice">
                         <input
                             type="radio"
                             name="teleprompter-theme"
@@ -396,7 +406,7 @@ export default function Teleprompter() {
                         />
                         Black background / White text
                     </label>
-                    <label style={styles.themeOption}>
+                    <label className="ui-choice">
                         <input
                             type="radio"
                             name="teleprompter-theme"
@@ -408,9 +418,9 @@ export default function Teleprompter() {
                     </label>
                 </fieldset>
 
-                <fieldset style={styles.themeFieldset}>
-                    <legend style={styles.themeLegend}>Alignment</legend>
-                    <label style={styles.themeOption}>
+                <fieldset className="ui-panel ui-stack" data-gap="sm">
+                    <legend className="ui-label">Alignment</legend>
+                    <label className="ui-choice">
                         <input
                             type="radio"
                             name="teleprompter-align"
@@ -420,7 +430,7 @@ export default function Teleprompter() {
                         />
                         Left
                     </label>
-                    <label style={styles.themeOption}>
+                    <label className="ui-choice">
                         <input
                             type="radio"
                             name="teleprompter-align"
@@ -430,7 +440,7 @@ export default function Teleprompter() {
                         />
                         Center
                     </label>
-                    <label style={styles.themeOption}>
+                    <label className="ui-choice">
                         <input
                             type="radio"
                             name="teleprompter-align"
@@ -444,12 +454,9 @@ export default function Teleprompter() {
             </div>
 
             <button
+                className="ui-button"
+                data-size="lg"
                 type="button"
-                style={{
-                    ...styles.playButton,
-                    opacity: hasScript ? 1 : 0.6,
-                    cursor: hasScript ? "pointer" : "not-allowed",
-                }}
                 aria-disabled={!hasScript}
                 onClick={() => {
                     if (!hasScript) return;
@@ -463,72 +470,6 @@ export default function Teleprompter() {
 }
 
 const styles: Record<string, CSSProperties> = {
-    setupRoot: {
-        maxWidth: "960px",
-        margin: "0 auto",
-        padding: "24px 16px 40px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "12px",
-    },
-    title: {
-        textAlign: "center",
-        marginBottom: "4px",
-    },
-    label: {
-        fontWeight: 700,
-    },
-    textarea: {
-        width: "100%",
-        resize: "vertical",
-        minHeight: "220px",
-        border: "1px solid #cbd5e1",
-        borderRadius: "8px",
-        padding: "12px",
-        fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-        fontSize: "15px",
-        lineHeight: 1.5,
-        boxSizing: "border-box",
-    },
-    controlsGrid: {
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-        gap: "12px",
-        alignItems: "center",
-    },
-    sliderLabel: {
-        display: "flex",
-        flexDirection: "column",
-        gap: "8px",
-        fontWeight: 600,
-    },
-    themeFieldset: {
-        border: "1px solid #cbd5e1",
-        borderRadius: "8px",
-        margin: 0,
-        padding: "10px 12px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "8px",
-    },
-    themeLegend: {
-        fontWeight: 700,
-        padding: "0 4px",
-    },
-    themeOption: {
-        display: "flex",
-        alignItems: "center",
-        gap: "8px",
-    },
-    playButton: {
-        alignSelf: "flex-start",
-        padding: "12px 28px",
-        border: "1px solid #0f172a",
-        background: "#0f172a",
-        color: "#fff",
-        fontWeight: 700,
-        borderRadius: "8px",
-    },
     playbackRoot: {
         position: "fixed",
         inset: 0,

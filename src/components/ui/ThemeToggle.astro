@@ -1,0 +1,65 @@
+<button
+    id="theme-toggle"
+    class="ui-button ui-icon-button"
+    data-variant="secondary"
+    type="button"
+    aria-label="Use dark theme"
+    aria-pressed="false"
+    title="Toggle color theme"
+>
+    <svg class="theme-icon theme-icon--light" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="4"></circle>
+        <path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41"></path>
+    </svg>
+    <svg class="theme-icon theme-icon--dark" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M20.3 15.5A8.5 8.5 0 0 1 8.5 3.7 8.5 8.5 0 1 0 20.3 15.5Z"></path>
+    </svg>
+</button>
+
+<style>
+    .theme-icon {
+        width: 1.15rem;
+        height: 1.15rem;
+        fill: none;
+        stroke: currentColor;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 1.75;
+    }
+
+    .theme-icon--dark {
+        display: none;
+    }
+
+    :global([data-theme="dark"]) .theme-icon--light {
+        display: none;
+    }
+
+    :global([data-theme="dark"]) .theme-icon--dark {
+        display: block;
+    }
+</style>
+
+<script>
+    const themeToggle = document.getElementById("theme-toggle") as HTMLButtonElement | null;
+
+    const updateThemeToggle = () => {
+        if (!themeToggle) return;
+        const isDark = document.documentElement.dataset.theme === "dark";
+        themeToggle.ariaPressed = String(isDark);
+        themeToggle.setAttribute("aria-label", isDark ? "Use light theme" : "Use dark theme");
+    };
+
+    themeToggle?.addEventListener("click", () => {
+        const nextTheme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+        document.documentElement.dataset.theme = nextTheme;
+        try {
+            localStorage.setItem("tools-theme", nextTheme);
+        } catch {
+            // Theme persistence is optional when storage is unavailable.
+        }
+        updateThemeToggle();
+    });
+
+    updateThemeToggle();
+</script>
