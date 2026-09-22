@@ -16,6 +16,8 @@ export type ImageInputProps = {
     previewAlt?: string;
     actionLabel?: string;
     replaceLabel?: string;
+    onRemove?: () => void;
+    removeLabel?: string;
     loading?: boolean;
     loadingLabel?: string;
     label?: string;
@@ -38,6 +40,8 @@ export default function ImageInput({
     previewAlt = "Selected image preview",
     actionLabel = "Browse",
     replaceLabel = "Replace",
+    onRemove,
+    removeLabel = "Remove",
     loading = false,
     loadingLabel = "Loading image…",
     label,
@@ -67,35 +71,40 @@ export default function ImageInput({
                 accept={accept}
                 theme={theme}
                 label={accessibleLabel}
-                className={["ui-image-input", stateClass, className].filter(Boolean).join(" ")}
+                className={["ui-image-input", stateClass, hasFile && onRemove ? "has-remove" : "", className].filter(Boolean).join(" ")}
                 style={style}
                 disabled={disabled || loading}
             >
-                <span className="ui-image-input__visual" aria-hidden="true">
-                    {previewUrl ? (
-                        <img src={previewUrl} alt={previewAlt} />
-                    ) : loading ? (
-                        <Spinner size={24} />
-                    ) : (
-                        <svg viewBox="0 0 24 24" focusable="false">
-                            <path d="M4.75 4.75h14.5v14.5H4.75z" />
-                            <circle cx="9" cy="9" r="1.5" />
-                            <path d="m6.75 17 3.4-3.4 2.35 2.35 1.85-1.85 2.9 2.9" />
-                        </svg>
-                    )}
-                </span>
-
-                <span className="ui-image-input__content" aria-live="polite">
-                    <strong className="ui-image-input__title">
-                        {loading ? loadingLabel : controlTitle}
-                    </strong>
-                </span>
-
-                {!loading && (
-                    <span className="ui-image-input__action" aria-hidden="true">
-                        {hasFile ? replaceLabel : actionLabel}
+                {(openFilePicker) => <>
+                    <span className="ui-image-input__visual" aria-hidden="true">
+                        {previewUrl ? (
+                            <img src={previewUrl} alt={previewAlt} />
+                        ) : loading ? (
+                            <Spinner size={24} />
+                        ) : (
+                            <svg viewBox="0 0 24 24" focusable="false">
+                                <path d="M4.75 4.75h14.5v14.5H4.75z" />
+                                <circle cx="9" cy="9" r="1.5" />
+                                <path d="m6.75 17 3.4-3.4 2.35 2.35 1.85-1.85 2.9 2.9" />
+                            </svg>
+                        )}
                     </span>
-                )}
+
+                    <span className="ui-image-input__content" aria-live="polite">
+                        <strong className="ui-image-input__title" title={fileName || undefined}>
+                            {loading ? loadingLabel : controlTitle}
+                        </strong>
+                    </span>
+
+                    <span className="ui-image-input__actions">
+                        <button type="button" className="ui-button" data-variant="secondary" data-size="sm"
+                            onClick={openFilePicker} disabled={disabled || loading}>
+                            {hasFile ? replaceLabel : actionLabel}
+                        </button>
+                        {hasFile && onRemove && <button type="button" className="ui-button" data-variant="ghost" data-size="sm"
+                            onClick={onRemove} disabled={disabled || loading}>{removeLabel}</button>}
+                    </span>
+                </>}
             </ImageDropZone>
             {supportText && <p className="ui-image-input__support">{supportText}</p>}
         </div>

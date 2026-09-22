@@ -885,6 +885,7 @@
 .ui-image-input-field {
     display: grid;
     gap: var(--ui-space-2);
+    container-type: inline-size;
 }
 
 .ui-image-input {
@@ -907,6 +908,20 @@
     box-shadow: var(--ui-shadow-md);
 }
 
+.ui-image-input[role="group"] {
+    cursor: default;
+}
+
+.ui-image-input.is-populated {
+    border-style: solid;
+}
+
+.ui-image-input__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--ui-space-1);
+}
+
 .ui-image-input[data-dragging="true"] {
     border-style: solid;
     outline: 3px solid color-mix(in srgb, var(--ui-color-focus) 12%, transparent);
@@ -914,6 +929,7 @@
 }
 
 .ui-image-input__visual {
+    position: relative;
     width: 3rem;
     height: 3rem;
     display: grid;
@@ -943,10 +959,12 @@
 }
 
 .ui-image-input__visual img {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
     display: block;
-    object-fit: cover;
+    object-fit: contain;
 }
 
 .ui-image-input__content {
@@ -993,6 +1011,17 @@
 
 .ui-image-input.is-loading .ui-image-input__visual {
     background: var(--ui-color-surface);
+}
+
+@container (max-width: 24rem) {
+    .ui-image-input.has-remove {
+        grid-template-columns: 2.5rem minmax(0, 1fr);
+    }
+
+    .ui-image-input.has-remove .ui-image-input__actions {
+        grid-column: 2;
+        justify-self: start;
+    }
 }
 
 .ui-color-field {

@@ -6,7 +6,7 @@ export type ImageDropZoneProps = {
     onDraggingChange: (dragging: boolean) => void;
     accept?: string;
     theme?: "light" | "dark";
-    children: ReactNode;
+    children: ReactNode | ((openFilePicker: () => void) => ReactNode);
     style?: CSSProperties;
     label?: string;
     className?: string;
@@ -26,6 +26,7 @@ export default function ImageDropZone({
     disabled = false,
 }: ImageDropZoneProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const hasActions = typeof children === "function";
 
     const openFilePicker = () => {
         if (!disabled) fileInputRef.current?.click();
@@ -58,21 +59,23 @@ export default function ImageDropZone({
             className={["ui-dropzone", className].filter(Boolean).join(" ")}
             data-dragging={dragging}
             data-theme={theme}
-            role="button"
-            tabIndex={disabled ? -1 : 0}
+            role={hasActions ? "group" : "button"}
+            tabIndex={hasActions ? undefined : disabled ? -1 : 0}
             aria-label={label}
             aria-disabled={disabled || undefined}
             onDragOver={(event) => {
                 event.preventDefault();
                 if (!disabled) onDraggingChange(true);
             }}
-            onDragLeave={() => onDraggingChange(false)}
+            onDragLeave={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget as Node | null)) onDraggingChange(false);
+            }}
             onDrop={handleDrop}
-            onClick={openFilePicker}
-            onKeyDown={handleKeyDown}
+            onClick={hasActions ? undefined : openFilePicker}
+            onKeyDown={hasActions ? undefined : handleKeyDown}
             style={style}
         >
-            {children}
+            {typeof children === "function" ? children(openFilePicker) : children}
             <input
                 ref={fileInputRef}
                 className="ui-dropzone-input"
@@ -81,6 +84,7 @@ export default function ImageDropZone({
                 onChange={handleInputChange}
                 disabled={disabled}
                 tabIndex={-1}
+                aria-hidden="true"
             />
         </div>
     );

@@ -34,6 +34,8 @@ Surface and result primitives include cards, panels, result/stat cards, alerts, 
 
 Use the shared React `ImageInput` for the compact image picker. Pass `formats` and `maxFileSize` for its short support line; place workflow instructions and privacy explanations in the surrounding page content.
 
+Pass `fileName` and `previewUrl` for its selected-image state with a Replace button, and `onRemove` to show an optional Remove button. The picker accepts drops in both states. `ImageDropZone` supports a render function for children that need their own browse button; it provides `openFilePicker` and uses a group role to avoid nesting buttons.
+
 Use semantic tokens for interface chrome. Hard-coded colors are reserved for generated content and specialized visuals such as canvases, images, QR output, charts, palettes, color spectra, coins, and spinner wheels.
 
 ## Accessibility
