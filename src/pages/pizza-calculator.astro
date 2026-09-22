@@ -1,0 +1,8 @@
+---
+import PageLayout from "@layouts/PageLayout.astro";
+import PizzaCalculatorComponent from "@tools/pizza-calculator/PizzaCalculator.tsx";
+---
+
+<PageLayout title="Pizza Calculator" description="Calculate how many pizzas to order for your party based on group size, appetite, and pizza size.">
+  <PizzaCalculatorComponent client:load />
+</PageLayout>
