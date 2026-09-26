@@ -1,0 +1,8 @@
+---
+import PageLayout from "@layouts/PageLayout.astro";
+import QRScanner from "@tools/qr-scanner/QRScanner";
+---
+
+<PageLayout title="QR Code Scanner" description="Scan QR codes with your camera or an image. Inspect the raw data and choose actions for websites, contacts, Wi-Fi, and more.">
+    <QRScanner client:load />
+</PageLayout>
