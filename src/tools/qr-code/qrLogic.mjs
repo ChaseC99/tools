@@ -30,7 +30,7 @@ export function getColorWarning(foreground, background) {
     const bg = luminance(background);
     const contrast = (Math.max(fg, bg) + 0.05) / (Math.min(fg, bg) + 0.05);
     // A conservative design hint, not a guarantee that a scanner can read the code.
-    if (contrast < 4.5) return { reason: "These colors have low contrast.", tip: "Choose colors with more contrast to make your QR code easier to scan." };
+    if (contrast < 3) return { reason: "These colors have low contrast.", tip: "Choose colors with more contrast to make your QR code easier to scan." };
     if (fg > bg) return { reason: "Light dots on a dark background may not scan in every app.", tip: "Swap the foreground and background colors for more reliable scanning." };
     return null;
 }

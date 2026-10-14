@@ -1,0 +1,8 @@
+---
+import PageLayout from "@layouts/PageLayout.astro";
+import ContrastCheckerComponent from "@tools/contrast-checker/ContrastChecker.tsx";
+---
+
+<PageLayout title="Color Contrast" description="Check the contrast ratio of two colors with a live preview and WCAG AA and AAA text contrast results.">
+    <ContrastCheckerComponent client:load />
+</PageLayout>

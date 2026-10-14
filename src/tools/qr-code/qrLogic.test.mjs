@@ -106,6 +106,8 @@ test("distinguishes identical, low contrast, and inverted colors", () => {
     assert.match(getColorWarning("#eeeeee", "#ffffff").reason, /low contrast/);
     assert.match(getColorWarning("#ffffff", "#000000").reason, /Light dots/);
     assert.equal(getColorWarning("#000000", "#ffffff"), null);
+    assert.equal(getColorWarning("#949494", "#ffffff"), null);
+    assert.match(getColorWarning("#959595", "#ffffff").reason, /low contrast/);
 });
 
 test("keeps one renderer and serializes logo updates until each SVG is complete", async () => {
