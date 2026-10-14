@@ -4,6 +4,10 @@ export const DEFAULT_BORDER_SPACING = 4;
 
 export const isHexColor = (value) => /^#[0-9a-f]{6}$/i.test(value);
 
+// Both QR libraries use an eight-bit string by default. Feed them UTF-8 bytes
+// so international names, emoji, and multiline content survive a scan.
+export const encodeQRData = (value) => Array.from(new TextEncoder().encode(value), byte => String.fromCharCode(byte)).join('');
+
 export function normalizeWebsiteUrl(value) {
     const url = value.trim();
     if (!url) return "";
@@ -41,7 +45,7 @@ export function getQRLayout(data, size, errorCorrectionLevel, spacingPercent = D
     const mode = /^[0-9]*$/.test(data) ? "Numeric"
         : /^[0-9A-Z $%*+\-./:]*$/.test(data) ? "Alphanumeric" : "Byte";
     const code = qrcode(0, errorCorrectionLevel);
-    code.addData(data, mode);
+    code.addData(encodeQRData(data), mode);
     try {
         code.make();
     } catch {
@@ -68,7 +72,7 @@ export function createQRRenderer(Renderer) {
     return (options, isCurrent = () => true) => {
         const job = queue.then(async () => {
             if (!isCurrent()) return null;
-            renderer.update(options);
+            renderer.update(typeof options.data === 'string' ? { ...options, data: encodeQRData(options.data) } : options);
             const blob = await renderer.getRawData("svg");
             if (!(blob instanceof Blob)) throw new Error("Could not generate the QR image. Try changing the settings.");
             return isCurrent() ? blob : null;

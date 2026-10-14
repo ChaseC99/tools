@@ -54,6 +54,12 @@ export function describeQR(raw) {
         return { type: 'Calendar event', detail: 'Download the event, then open it in your calendar to review and add it.',
             action: { kind: 'download', label: 'Add to calendar (.ics)', content, mime: 'text/calendar', filename: 'event.ics' } };
     }
+    // SMSTO permits multiline text; encode its body before exposing a URI.
+    const smsto = /^SMSTO:([^:]+)(?::([\s\S]*))?$/i.exec(value);
+    if (smsto && /^[+\d(). -]+$/.test(smsto[1])) {
+        return { type: 'SMS', detail: value, action: { kind: 'link', label: 'Compose message',
+            href: `sms:${smsto[1]}${smsto[2] ? `?body=${encodeURIComponent(smsto[2])}` : ''}` } };
+    }
     // Never pass arbitrary scanned schemes (javascript:, data:, file:, etc.) to a link.
     if (/[\u0000-\u001f\u007f]/.test(value)) return text;
     if (/^https?:\/\//i.test(value)) {
@@ -69,11 +75,6 @@ export function describeQR(raw) {
         const query = value.includes('?') ? new URLSearchParams(value.slice(value.indexOf('?') + 1)).get('q') : null;
         return { type: 'Location', detail: value, action: { kind: 'link', label: 'Open map',
             href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query || `${match[1]},${match[2]}`)}` } };
-    }
-    const smsto = /^SMSTO:([^:]+)(?::([\s\S]*))?$/i.exec(value);
-    if (smsto && /^[+\d(). -]+$/.test(smsto[1])) {
-        return { type: 'SMS', detail: value, action: { kind: 'link', label: 'Compose message',
-            href: `sms:${smsto[1]}${smsto[2] ? `?body=${encodeURIComponent(smsto[2])}` : ''}` } };
     }
     for (const [scheme, type, label] of [['mailto', 'Email', 'Compose email'], ['tel', 'Phone number', 'Call number'], ['sms', 'SMS', 'Compose message']]) {
         if (!value.toLowerCase().startsWith(`${scheme}:`) || value.length <= scheme.length + 1) continue;

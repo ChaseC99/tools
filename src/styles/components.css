@@ -212,6 +212,26 @@
     background: var(--ui-color-surface-inset);
 }
 
+.ui-password-input { position: relative; min-width: 0; }
+.ui-password-input .ui-input { padding-right: 3rem; }
+.ui-password-toggle {
+    position: absolute;
+    top: 50%;
+    right: var(--ui-space-1);
+    transform: translateY(-50%);
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: 0;
+    border-radius: var(--ui-radius-sm);
+    background: transparent;
+    color: var(--ui-color-text-muted);
+}
+.ui-password-toggle:hover:not(:disabled) { background: var(--ui-color-surface-hover); color: var(--ui-color-text); }
+.ui-password-toggle:disabled { opacity: 0.56; }
+
 @media (hover: hover) and (pointer: fine) {
     @supports (appearance: base-select) {
         .ui-select,

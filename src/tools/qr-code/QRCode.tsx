@@ -1,12 +1,17 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import ImageInput from "@tools/shared/ImageInput";
 import DownloadButton from "@tools/shared/DownloadButton";
-import CollapsibleSection from "@tools/shared/CollapsibleSection";
 import ErrorMessage from "@tools/shared/ErrorMessage";
 import type { Options } from "qr-code-styling";
-import { createQRImageSource, createQRRenderer, DEFAULT_BORDER_SPACING, getQRLayout, isHexColor, normalizeWebsiteUrl } from "./qrLogic.mjs";
+import { createQRImageSource, createQRRenderer, DEFAULT_BORDER_SPACING, getQRLayout, isHexColor } from "./qrLogic.mjs";
+import QRContentEditor from "./QRContentEditor";
+import { buildQRContent, createQRDrafts, setCalendarAllDay, type QRContentType } from "./qrContent.mjs";
 import ErrorCorrectionHelp from "./ErrorCorrectionHelp";
+import ErrorCorrectionSelect from "./ErrorCorrectionSelect";
+import BorderSample from "./BorderSample";
 import ShapePicker from "./ShapePicker";
+import ShapeSample from "./ShapeSample";
+import StyleSection from "./StyleSection";
 import QRScanSafeguards from "./QRScanSafeguards";
 import LogoControls from "./LogoControls";
 import { addLogoOverlay, DEFAULT_LOGO_SETTINGS, type LogoOverlay, type LogoSettings, type LogoSource } from "./qrLogo";
@@ -22,9 +27,28 @@ type QRRequest = Options & { logo?: LogoOverlay; corners: { outer: CornerType; i
 type QRImageSource = (request: QRRequest, getOptions: () => QRRequest, retain?: boolean) => Promise<Blob>;
 type Preview = { request: QRRequest; blob: Blob; url: string };
 
+const dotOptions: { value: DotType; label: string }[] = [
+    { value: "square", label: "Square" },
+    { value: "rounded", label: "Round" },
+    { value: "dots", label: "Circular" },
+    { value: "classy", label: "Classy" },
+    { value: "classy-rounded", label: "Classy round" },
+    { value: "extra-rounded", label: "Extra round" },
+];
+
 export default function QRCode() {
-    const [text, setText] = useState("");
-    const normalizedUrl = normalizeWebsiteUrl(text);
+    const [contentType, setContentType] = useState<QRContentType>("website");
+    const [drafts, setDrafts] = useState(createQRDrafts);
+    const { data: content, errors: contentErrors } = useMemo(
+        () => buildQRContent(contentType, drafts[contentType]), [contentType, drafts]);
+
+    useEffect(() => {
+        const uid = crypto.randomUUID?.() ?? Array.from(crypto.getRandomValues(new Uint8Array(16)), byte => byte.toString(16).padStart(2, "0")).join("");
+        setDrafts(current => ({ ...current, calendar: { ...current.calendar,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+            uid: `${uid}@tools`, stamp: new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z"),
+        } }));
+    }, []);
     const [size, setSize] = useState(1000);
     const [borderSpacing, setBorderSpacing] = useState(DEFAULT_BORDER_SPACING);
     const [borderRadius, setBorderRadius] = useState(0);
@@ -59,12 +83,13 @@ export default function QRCode() {
     const colorsValid = isHexColor(fgDraft) && isHexColor(bgDraft);
     const identicalColors = fgColor.toLowerCase() === bgColor.toLowerCase();
     const { layout, layoutError } = useMemo(() => {
+        if (!content) return { layout: null, layoutError: null };
         try {
-            return { layout: getQRLayout(normalizedUrl, size, effectiveErrorCorrection, borderSpacing), layoutError: null };
+            return { layout: getQRLayout(content, size, effectiveErrorCorrection, borderSpacing), layoutError: null };
         } catch (error) {
             return { layout: null, layoutError: error instanceof Error ? error.message : "Could not calculate the QR layout." };
         }
-    }, [normalizedUrl, size, effectiveErrorCorrection, borderSpacing]);
+    }, [content, size, effectiveErrorCorrection, borderSpacing]);
     const maxBorderRadius = layout?.maxRadiusPercent ?? 0;
     const effectiveBorderRadius = Math.min(borderRadius, maxBorderRadius);
 
@@ -77,7 +102,7 @@ export default function QRCode() {
     const request = useMemo<QRRequest>(() => ({
         width: size,
         height: size,
-        data: normalizedUrl,
+        data: content,
         image: "",
         logo: logoSource ? { source: logoSource, settings: logoSettings } : undefined,
         dotsOptions: { type: dotType, color: fgColor },
@@ -86,10 +111,10 @@ export default function QRCode() {
         cornersSquareOptions: { type: "square", color: fgColor },
         cornersDotOptions: { type: "square", color: fgColor },
         qrOptions: { errorCorrectionLevel: effectiveErrorCorrection },
-    }), [normalizedUrl, size, logoSource, logoSettings, dotType, fgColor, bgColor, cornerSquareType, cornerDotType, effectiveErrorCorrection, borderSpacing, effectiveBorderRadius]);
+    }), [content, size, logoSource, logoSettings, dotType, fgColor, bgColor, cornerSquareType, cornerDotType, effectiveErrorCorrection, borderSpacing, effectiveBorderRadius]);
     const previewCurrent = preview?.request === request;
-    const showPreview = !!preview && !!normalizedUrl && !renderError && !qrLoadError;
-    const canDownload = rendererReady && !!normalizedUrl && !!layout && colorsValid
+    const showPreview = !!preview && preview.request.data === content && !!content && !renderError && !qrLoadError;
+    const canDownload = rendererReady && !!content && !!layout && colorsValid
         && !identicalColors && !logoLoading && !downloading && !renderError && !qrLoadError;
 
     const copying = copyState?.status === "copying";
@@ -157,7 +182,7 @@ export default function QRCode() {
         let cancelled = false;
         setRenderError(null);
         setDownloadError(null);
-        if (!normalizedUrl) {
+        if (!content) {
             setPreview(null);
             return;
         }
@@ -185,7 +210,7 @@ export default function QRCode() {
         };
         void render();
         return () => { cancelled = true; };
-    }, [request, rendererReady, normalizedUrl, getImage]);
+    }, [request, rendererReady, content, getImage]);
 
     useEffect(() => {
         // Keep the old image URL alive until its replacement is displayed.
@@ -257,153 +282,20 @@ export default function QRCode() {
 
     return (
         <div className="qr-workspace ui-workspace">
-            <section className="qr-controls ui-panel ui-stack" aria-label="QR code settings">
-                <div className="ui-field">
-                    <label className="ui-section-label" htmlFor="qr-content">Content</label>
-                    <input
-                        id="qr-content"
-                        className="ui-input"
-                        type="text"
-                        value={text}
-                        onChange={(e) => setText(e.target.value)}
-                        placeholder="Enter a website..."
-                    />
-                </div>
-
-                <CollapsibleSection label="Colors">
-                    <div className="qr-colors">
-                        <label className="ui-field" htmlFor="qr-fg">
-                            <span className="ui-label">Foreground</span>
-                            <div className="ui-color-field">
-                                <input id="qr-fg" className="ui-color-input" type="color" value={fgColor} onChange={(e) => { setFgColor(e.target.value); setFgDraft(e.target.value); }} />
-                                <input
-                                    aria-label="Foreground color hex"
-                                    className="ui-input qr-color-value"
-                                    type="text"
-                                    value={fgDraft}
-                                    aria-invalid={!isHexColor(fgDraft)}
-                                    aria-describedby={!colorsValid ? "qr-color-error" : undefined}
-                                    onChange={(e) => { setFgDraft(e.target.value); if (isHexColor(e.target.value)) setFgColor(e.target.value); }}
-                                    maxLength={7}
-                                />
-                            </div>
-                        </label>
-                        <button
-                            type="button"
-                            className="ui-button ui-icon-button qr-swap"
-                            data-variant="secondary"
-                            data-size="sm"
-                            aria-label="Swap foreground and background colors"
-                            title="Swap foreground and background colors"
-                            onClick={() => { setFgColor(bgColor); setFgDraft(bgColor); setBgColor(fgColor); setBgDraft(fgColor); }}
-                        >
-                            ⇅
-                        </button>
-                        <label className="ui-field" htmlFor="qr-bg">
-                            <span className="ui-label">Background</span>
-                            <div className="ui-color-field">
-                                <input id="qr-bg" className="ui-color-input" type="color" value={bgColor} onChange={(e) => { setBgColor(e.target.value); setBgDraft(e.target.value); }} />
-                                <input
-                                    aria-label="Background color hex"
-                                    className="ui-input qr-color-value"
-                                    type="text"
-                                    value={bgDraft}
-                                    aria-invalid={!isHexColor(bgDraft)}
-                                    aria-describedby={!colorsValid ? "qr-color-error" : undefined}
-                                    onChange={(e) => { setBgDraft(e.target.value); if (isHexColor(e.target.value)) setBgColor(e.target.value); }}
-                                    maxLength={7}
-                                />
-                            </div>
-                        </label>
-                    </div>
-                </CollapsibleSection>
-
-                <CollapsibleSection label="Shapes">
-                    <div className="ui-grid qr-shape-grid">
-                        <ShapePicker<DotType> label="Dots" part="dots" value={dotType} onChange={setDotType}
-                            options={[
-                                { value: "square", label: "Square" },
-                                { value: "rounded", label: "Round" },
-                                { value: "dots", label: "Circular" },
-                                { value: "classy", label: "Classy" },
-                                { value: "classy-rounded", label: "Classy round" },
-                                { value: "extra-rounded", label: "Extra round" },
-                            ]} />
-                        <ShapePicker<CornerType> label="Outer corners" part="outer" value={cornerSquareType} onChange={setCornerSquareType}
-                            options={cornerOptions} />
-                        <ShapePicker<CornerType> label="Inner corners" part="inner" value={cornerDotType} onChange={setCornerDotType}
-                            options={cornerOptions} />
-                    </div>
-                </CollapsibleSection>
-
-                <CollapsibleSection label="Border">
-                    <div className="ui-stack">
-                        <label className="ui-field" htmlFor="qr-border-spacing">
-                            <span className="ui-label">Border spacing <span className="ui-muted">{borderSpacing}%</span></span>
-                            <input id="qr-border-spacing" className="ui-range" type="range" min={0} max={20} step={1}
-                                value={borderSpacing} onChange={(event) => setBorderSpacing(Number(event.target.value))}
-                                aria-valuetext={`${borderSpacing}% of download size per side`} />
-                        </label>
-                        <label className="ui-field" htmlFor="qr-border-radius">
-                            <span className="ui-label">Corner radius <span className="ui-muted">{effectiveBorderRadius}%</span></span>
-                            <input id="qr-border-radius" className="ui-range" type="range" min={0} max={maxBorderRadius} step={1}
-                                value={effectiveBorderRadius} disabled={maxBorderRadius === 0}
-                                onChange={(event) => setBorderRadius(Number(event.target.value))}
-                                aria-valuetext={`${effectiveBorderRadius}% of download size; maximum ${maxBorderRadius}% at this spacing`} />
-                        </label>
-                        {effectiveBorderRadius > 0 && <p className="ui-hint">Round corners are transparent in PNG and SVG. JPEG fills them with white.</p>}
-                    </div>
-                </CollapsibleSection>
-
-                <CollapsibleSection label="Logo">
-                    <ImageInput
-                        onFile={handleLogoFile}
-                        dragging={dragging}
-                        onDraggingChange={setDragging}
-                        title="Choose a logo"
-                        formats={["PNG", "JPEG", "WebP", "SVG"]}
-                        fileName={logoName}
-                        previewUrl={logoDataUrl}
-                        previewAlt="Logo preview"
-                        onRemove={removeLogo}
-                        loading={logoLoading}
-                        loadingLabel="Processing logo…"
-                    />
-                    <ErrorMessage message={logoError} />
-                    {logoSource && <LogoControls settings={logoSettings} background={bgColor} onChange={setLogoSettings} />}
-                </CollapsibleSection>
-
-                <CollapsibleSection label="Advanced">
-                    <div className="ui-field">
-                        <div className="qr-label-with-help">
-                            <label className="ui-label" htmlFor="qr-ec">Error correction</label>
-                            <ErrorCorrectionHelp />
-                        </div>
-                        <select
-                            id="qr-ec"
-                            className="ui-select"
-                            value={effectiveErrorCorrection}
-                            onChange={(e) => setUserErrorCorrection(e.target.value as ErrorCorrectionLevel)}
-                            disabled={!!logoDataUrl}
-                        >
-                            <option value="L">Low</option>
-                            <option value="M">Medium</option>
-                            <option value="Q">Quartile</option>
-                            <option value="H">High</option>
-                        </select>
-                        {logoDataUrl && (
-                            <span className="ui-hint">Logo overlay requires high error correction.</span>
-                        )}
-                    </div>
-                </CollapsibleSection>
-            </section>
+            <QRContentEditor type={contentType} draft={drafts[contentType]} errors={contentErrors}
+                onTypeChange={setContentType}
+                onChange={(key, value) => setDrafts(current => ({ ...current,
+                    [contentType]: contentType === "calendar" && key === "allDay"
+                        ? setCalendarAllDay(current.calendar, value === true)
+                        : { ...current[contentType], [key]: value },
+                }))} />
 
             <aside className="qr-preview-panel ui-panel ui-stack" data-elevation="raised" aria-label="QR code preview">
                 <span className="ui-section-label">Preview</span>
                 <div
                     className="qr-preview-frame"
                     data-empty={String(!showPreview)}
-                    aria-busy={!!normalizedUrl && !previewCurrent && !renderError && !qrLoadError}
+                    aria-busy={!!content && !previewCurrent && !renderError && !qrLoadError}
                     style={{ borderRadius: `${effectiveBorderRadius}%` }}
                 >
                     {showPreview && preview && (
@@ -414,9 +306,9 @@ export default function QRCode() {
                             onError={() => setRenderError("Could not display the QR code. Try changing the settings or removing the logo.")}
                         />
                     )}
-                    {!showPreview && (!normalizedUrl || renderError || qrLoadError) && <p className="qr-placeholder" role="status">{
-                        !normalizedUrl ? "Enter a website to generate a QR code."
-                            : "Preview unavailable."
+                    {!showPreview && <p className="qr-placeholder" role="status">{
+                        !content ? "Enter valid content details to generate a QR code."
+                            : renderError || qrLoadError ? "Preview unavailable." : "Updating QR code…"
                     }</p>}
                 </div>
                 <div className="qr-quality">
@@ -432,9 +324,8 @@ export default function QRCode() {
                     </div>
                 </div>
                 <ErrorMessage message={qrLoadError || renderError || downloadError || copyError} style={{ textAlign: "center", maxWidth: 320 }} />
-                {!colorsValid && <p id="qr-color-error" className="ui-alert" data-variant="danger" role="alert">Enter a full six-digit hex color, such as #1a2b3c. The preview keeps the last valid colors.</p>}
-                <QRScanSafeguards foreground={fgColor} background={bgColor} enabled={colorsValid && !!normalizedUrl}
-                    image={previewCurrent && showPreview && !logoLoading ? preview.blob : null} size={size} content={normalizedUrl} />
+                <QRScanSafeguards foreground={fgColor} background={bgColor} enabled={colorsValid && !!content}
+                    image={previewCurrent && showPreview && !logoLoading ? preview.blob : null} size={size} content={content} />
                 <div className="qr-download-row">
                     <label className="ui-sr-only" htmlFor="qr-download-format">Download format</label>
                     <select
@@ -469,6 +360,121 @@ export default function QRCode() {
                 </div>
                 <span className="ui-sr-only" role="status">{copied ? "QR code image copied to clipboard." : ""}</span>
             </aside>
+
+            <section className="qr-appearance-panel ui-panel" aria-label="QR code appearance">
+                <h2 className="qr-panel-title">Appearance</h2>
+                <div className="qr-colors">
+                    <div className="ui-field">
+                        <label className="ui-label" htmlFor="qr-fg">Color</label>
+                        <div className="ui-color-field">
+                            <input id="qr-fg" className="ui-color-input" type="color" value={fgColor} onChange={(e) => { setFgColor(e.target.value); setFgDraft(e.target.value); }} />
+                            <input
+                                aria-label="Foreground color hex"
+                                className="ui-input qr-color-value"
+                                type="text"
+                                value={fgDraft}
+                                aria-invalid={!isHexColor(fgDraft)}
+                                aria-describedby={!colorsValid ? "qr-color-error" : undefined}
+                                onChange={(e) => { setFgDraft(e.target.value); if (isHexColor(e.target.value)) setFgColor(e.target.value); }}
+                                maxLength={7}
+                            />
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        className="ui-button ui-icon-button qr-swap"
+                        data-variant="secondary"
+                        data-size="sm"
+                        aria-label="Swap foreground and background colors"
+                        title="Swap foreground and background colors"
+                        onClick={() => { setFgColor(bgColor); setFgDraft(bgColor); setBgColor(fgColor); setBgDraft(fgColor); }}
+                    >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 7h16m-4-4 4 4-4 4M20 17H4m4-4-4 4 4 4" /></svg>
+                    </button>
+                    <div className="ui-field">
+                        <label className="ui-label" htmlFor="qr-bg">Background</label>
+                        <div className="ui-color-field">
+                            <input id="qr-bg" className="ui-color-input" type="color" value={bgColor} onChange={(e) => { setBgColor(e.target.value); setBgDraft(e.target.value); }} />
+                            <input
+                                aria-label="Background color hex"
+                                className="ui-input qr-color-value"
+                                type="text"
+                                value={bgDraft}
+                                aria-invalid={!isHexColor(bgDraft)}
+                                aria-describedby={!colorsValid ? "qr-color-error" : undefined}
+                                onChange={(e) => { setBgDraft(e.target.value); if (isHexColor(e.target.value)) setBgColor(e.target.value); }}
+                                maxLength={7}
+                            />
+                        </div>
+                    </div>
+                </div>
+                {!colorsValid && <p id="qr-color-error" className="ui-alert" data-variant="danger" role="alert">Enter a full six-digit hex color, such as #1a2b3c. The preview keeps the last valid colors.</p>}
+
+                <div className="qr-style-rows">
+                    <StyleSection label="Pixels" value={dotOptions.find(option => option.value === dotType)!.label}
+                        preview={<ShapeSample part="dots" value={dotType} />}>
+                        <ShapePicker<DotType> label="Pixels" part="dots" value={dotType} onChange={setDotType} options={dotOptions} hideLabel />
+                    </StyleSection>
+                    <StyleSection label="Eye frame" value={cornerOptions.find(option => option.value === cornerSquareType)!.label}
+                        preview={<ShapeSample part="outer" value={cornerSquareType} />}>
+                        <ShapePicker<CornerType> label="Eye frame" part="outer" value={cornerSquareType} onChange={setCornerSquareType} options={cornerOptions} hideLabel />
+                    </StyleSection>
+                    <StyleSection label="Eye center" value={cornerOptions.find(option => option.value === cornerDotType)!.label}
+                        preview={<ShapeSample part="inner" value={cornerDotType} />}>
+                        <ShapePicker<CornerType> label="Eye center" part="inner" value={cornerDotType} onChange={setCornerDotType} options={cornerOptions} hideLabel />
+                    </StyleSection>
+
+                    <StyleSection label="Border spacing" value={`${borderSpacing}%`}
+                        preview={<BorderSample kind="spacing" value={borderSpacing} />}>
+                        <label className="qr-style-slider" htmlFor="qr-border-spacing">
+                            <span className="ui-sr-only">Border spacing</span>
+                            <input id="qr-border-spacing" className="ui-range" type="range" min={0} max={20} step={1}
+                                value={borderSpacing} onChange={(event) => setBorderSpacing(Number(event.target.value))}
+                                aria-valuetext={`${borderSpacing}% of download size per side`} />
+                            <output htmlFor="qr-border-spacing">{borderSpacing}%</output>
+                        </label>
+                    </StyleSection>
+                    <StyleSection label="Corner radius" value={`${effectiveBorderRadius}%`}
+                        preview={<BorderSample kind="radius" value={effectiveBorderRadius} />}>
+                        <label className="qr-style-slider" htmlFor="qr-border-radius">
+                            <span className="ui-sr-only">Corner radius</span>
+                            <input id="qr-border-radius" className="ui-range" type="range" min={0} max={maxBorderRadius} step={1}
+                                value={effectiveBorderRadius} disabled={maxBorderRadius === 0}
+                                onChange={(event) => setBorderRadius(Number(event.target.value))}
+                                aria-valuetext={`${effectiveBorderRadius}% of download size; maximum ${maxBorderRadius}% at this spacing`} />
+                            <output htmlFor="qr-border-radius">{effectiveBorderRadius}%</output>
+                        </label>
+                        {effectiveBorderRadius > 0 && <p className="ui-hint">Round corners are transparent in PNG and SVG. JPEG fills them with white.</p>}
+                    </StyleSection>
+
+                    <StyleSection label="Logo" value={logoLoading ? "Processing…" : logoDataUrl ? "" : "No logo"}
+                        preview={logoDataUrl ? <img src={logoDataUrl} alt="" /> : undefined}>
+                        <ImageInput
+                            onFile={handleLogoFile}
+                            dragging={dragging}
+                            onDraggingChange={setDragging}
+                            title="Choose a logo"
+                            formats={["PNG", "JPEG", "WebP", "SVG"]}
+                            fileName={logoName}
+                            previewUrl={logoDataUrl}
+                            previewAlt="Logo preview"
+                            onRemove={removeLogo}
+                            loading={logoLoading}
+                            loadingLabel="Processing logo…"
+                        />
+                        <ErrorMessage message={logoError} />
+                        {logoSource && <LogoControls settings={logoSettings} background={bgColor} onChange={setLogoSettings} />}
+                    </StyleSection>
+
+                    <div className="qr-style-correction">
+                        <div className="qr-label-with-help">
+                            <label className="ui-label" htmlFor="qr-ec">Error correction</label>
+                            <ErrorCorrectionHelp />
+                        </div>
+                        <ErrorCorrectionSelect value={effectiveErrorCorrection} locked={!!logoDataUrl} onChange={setUserErrorCorrection} />
+                    </div>
+                </div>
+            </section>
         </div>
     );
 }

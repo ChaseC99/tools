@@ -3,17 +3,18 @@ import ShapeSample, { type ShapePart } from "./ShapeSample";
 
 type ShapeOption<T extends string> = { value: T; label: string };
 
-export default function ShapePicker<T extends string>({ label, part, options, value, onChange }: {
+export default function ShapePicker<T extends string>({ label, part, options, value, onChange, hideLabel = false }: {
     label: string;
     part: ShapePart;
     options: ShapeOption<T>[];
     value: T;
     onChange: (value: T) => void;
+    hideLabel?: boolean;
 }) {
     const name = useId();
     return (
         <fieldset className="qr-shape-picker">
-            <legend className="ui-label">{label}</legend>
+            <legend className={hideLabel ? "ui-sr-only" : "ui-label"}>{label}</legend>
             <div className="qr-shape-choices" data-part={part}>
                 {options.map((option) => (
                     <label key={option.value} className="qr-shape-option">
