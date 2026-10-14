@@ -1,5 +1,6 @@
 import { useEffect, useId, useState, type ReactNode } from "react";
 import PasswordInput from "@tools/shared/PasswordInput";
+import ContactFields from "./ContactFields";
 import { QR_CONTENT_TYPES, type QRContentType, type QRDraft } from "./qrContent.mjs";
 
 const icons: Record<QRContentType, ReactNode> = {
@@ -29,7 +30,7 @@ export default function QRContentEditor({ type, draft, errors, onTypeChange, onC
     draft: QRDraft;
     errors: Record<string, string>;
     onTypeChange: (type: QRContentType) => void;
-    onChange: (key: string, value: string | boolean) => void;
+    onChange: (key: string, value: QRDraft[string]) => void;
 }) {
     const id = useId();
     const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -92,15 +93,7 @@ export default function QRContentEditor({ type, draft, errors, onTypeChange, onC
                 <label className="ui-choice qr-content-wide"><input type="checkbox" checked={draft.hidden === true} onChange={event => onChange('hidden', event.target.checked)} />Hidden network</label>
                 <p className="ui-hint qr-content-wide">Anyone with this QR code can read the network details.</p>
             </>}
-            {type === 'contact' && <>
-                {field('firstName', 'First name', { optional: true })}
-                {field('lastName', 'Last name', { optional: true })}
-                <p className="ui-hint qr-content-wide">Enter at least a first or last name.</p>
-                {phoneField(true)}{emailField(true)}
-                {field('company', 'Company', { optional: true })}
-                {field('url', 'Website URL', { placeholder: 'https://example.com', optional: true })}
-                {field('address', 'Address', { optional: true, wide: true })}
-            </>}
+            {type === 'contact' && <ContactFields draft={draft} errors={errors} onChange={onChange} />}
             {type === 'email' && <>
                 {emailField()}
                 {field('subject', 'Subject', { optional: true, wide: true })}

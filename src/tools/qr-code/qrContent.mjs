@@ -1,7 +1,7 @@
 import { normalizeWebsiteUrl } from './qrLogic.mjs';
 
 /** @typedef {'website'|'wifi'|'contact'|'email'|'sms'|'phone'|'location'|'text'|'calendar'} QRContentType */
-/** @typedef {Record<string, string | boolean>} QRDraft */
+/** @typedef {Record<string, string | boolean | string[]>} QRDraft */
 
 /** @type {{id: QRContentType, label: string, action: string}[]} */
 export const QR_CONTENT_TYPES = [
@@ -21,7 +21,7 @@ export function createQRDrafts() {
     return /** @type {Record<QRContentType, QRDraft>} */ ({
         website: { url: '' },
         wifi: { ssid: '', password: '', security: 'WPA', hidden: false },
-        contact: { firstName: '', lastName: '', phone: '', email: '', company: '', url: '', address: '' },
+        contact: { firstName: '', lastName: '', phone: '', email: '', company: '', jobTitle: '', websites: [''], address: '', notes: '' },
         email: { email: '', subject: '', body: '' },
         sms: { phone: '', message: '' },
         phone: { phone: '' },
@@ -123,9 +123,12 @@ export function buildQRContent(type, draft) {
         if (value && !/^[^\s@,;:?<>]+@[^\s@,;:?<>]+\.[^\s@,;:?<>]+$/.test(value)) errors[key] = 'Enter one valid email address.';
         return value;
     };
-    const website = (key, optional = false) => {
-        const value = optional ? text(key) : required(key, 'a website URL');
-        if (!value) return '';
+    const website = (key, optional = false, input = text(key)) => {
+        const value = input.trim();
+        if (!value) {
+            if (!optional) errors[key] = 'Enter a website URL.';
+            return '';
+        }
         const normalized = normalizeWebsiteUrl(value);
         try {
             const url = new URL(normalized);
@@ -161,13 +164,17 @@ export function buildQRContent(type, draft) {
         case 'contact': {
             const first = text('firstName'), last = text('lastName');
             if (!first && !last) errors.firstName = 'Enter a first or last name.';
-            const number = phone('phone', true), address = email('email', true), url = website('url', true);
+            const number = phone('phone', true), address = email('email', true);
+            const websites = Array.isArray(draft.websites) ? draft.websites : [];
+            const urls = websites.map((value, index) => website(`websites.${index}`, true, value)).filter(Boolean);
             const lines = ['BEGIN:VCARD', 'VERSION:3.0', `N:${escapeText(last)};${escapeText(first)};;;`, `FN:${escapeText([first, last].filter(Boolean).join(' '))}`];
             if (number) lines.push(`TEL:${number}`);
             if (address) lines.push(`EMAIL:${escapeText(address)}`);
             if (text('company')) lines.push(`ORG:${escapeText(text('company'))}`);
-            if (url) lines.push(`URL:${url}`);
+            if (text('jobTitle')) lines.push(`TITLE:${escapeText(text('jobTitle'))}`);
+            for (const url of urls) lines.push(`URL:${url}`);
             if (text('address')) lines.push(`ADR:;;${escapeText(text('address'))};;;;`);
+            if (text('notes')) lines.push(`NOTE:${escapeText(raw('notes'))}`);
             data = [...lines, 'END:VCARD', ''].map(foldLine).join('\r\n');
             break;
         }

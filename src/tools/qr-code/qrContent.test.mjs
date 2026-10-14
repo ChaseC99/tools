@@ -46,15 +46,48 @@ test('Wi-Fi preserves significant spaces and escapes all delimiters without chan
 });
 
 test('contact text cannot inject properties and optional fields validate when present', () => {
-    const result = payload('contact', { firstName: 'Zoë', lastName: '王;Doe', company: 'Studio, Inc.\nTEL:999', address: '1 Main; Suite 2', email: 'zoe@example.com', phone: '+1 (415) 555-0100', url: 'example.com' });
+    const result = payload('contact', { firstName: 'Zoë', lastName: '王;Doe', company: 'Studio, Inc.\nTEL:999', jobTitle: 'Designer, Lead; UX\nTEL:999', address: '1 Main; Suite 2', email: 'zoe@example.com', phone: '+1 (415) 555-0100', websites: ['example.com'] });
     assert.equal(describeQR(result.data).type, 'Contact');
     assert.ok(result.data.includes('N:王\\;Doe;Zoë;;;'));
     assert.ok(result.data.includes('ORG:Studio\\, Inc.\\nTEL:999'));
+    assert.ok(result.data.includes('TITLE:Designer\\, Lead\\; UX\\nTEL:999'));
     assert.ok(result.data.includes('ADR:;;1 Main\\; Suite 2;;;;'));
     assert.ok(result.data.includes('TEL:+14155550100'));
     assert.ok(result.data.includes('URL:https://example.com'));
     assert.ok(payload('contact', { lastName: 'Doe' }).data);
+    assert.ok(!payload('contact', { firstName: 'Maya', jobTitle: '  ' }).data.includes('TITLE:'));
+    assert.ok(payload('contact', { firstName: 'Maya', jobTitle: 'Designer' }).data.includes('TITLE:Designer\r\n'));
     assert.equal(payload('contact', { firstName: 'Jane', email: 'invalid' }).data, '');
+});
+
+test('contacts include every website in order, normalize URLs, and ignore empty rows', () => {
+    const result = payload('contact', { firstName: 'Maya', websites: ['', ' example.com/portfolio ', '  ', 'https://example.org/about?lang=en#bio'] });
+    assert.deepEqual(result.errors, {});
+    assert.deepEqual(unfold(result.data).split('\r\n').filter(line => line.startsWith('URL:')), [
+        'URL:https://example.com/portfolio', 'URL:https://example.org/about?lang=en#bio',
+    ]);
+    assert.ok(!payload('contact', { firstName: 'Maya', websites: [] }).data.includes('URL:'));
+    assert.notEqual(createQRDrafts().contact.websites, createQRDrafts().contact.websites);
+});
+
+test('invalid contact websites report their row and prevent a partial contact QR', () => {
+    for (const invalid of ['https://', 'javascript:alert(1)', 'not a website', 'https://example.com/\r\nTEL:999']) {
+        const result = payload('contact', { firstName: 'Maya', websites: ['example.com', invalid, 'example.org'] });
+        assert.equal(result.data, '');
+        assert.deepEqual(Object.keys(result.errors), ['websites.1']);
+    }
+});
+
+test('contact notes preserve Unicode and line breaks, escape properties, and fold safely', () => {
+    const notes = '  Met at the studio, follow up; next week.\\Details\r\n' + '世界👋'.repeat(25) + '\nEND:VCARD\nTEL:999  ';
+    const result = payload('contact', { firstName: 'Maya', notes });
+    assert.deepEqual(result.errors, {});
+    assert.ok(unfold(result.data).includes('NOTE:  Met at the studio\\, follow up\\; next week.\\\\Details\\n' + '世界👋'.repeat(25) + '\\nEND:VCARD\\nTEL:999  \r\n'));
+    assert.equal(result.data.split('\r\nEND:VCARD').length, 2);
+    assert.ok(!result.data.includes('\r\nTEL:999'));
+    for (const line of result.data.split('\r\n')) assert.ok(Buffer.byteLength(line) <= 75);
+    assert.equal(describeQR(result.data).action.content, result.data.trim());
+    assert.ok(!payload('contact', { firstName: 'Maya', notes: ' \n ' }).data.includes('NOTE:'));
 });
 
 test('email and phone payloads encode reserved characters and reject injected destinations', () => {
@@ -166,7 +199,7 @@ test('renderer bytes decode to exact Unicode payloads for all content formats', 
     const samples = [
         payload('text', { text: '  Café 世界 👋\n ' }).data,
         payload('wifi', { ssid: '客人', password: '密碼🔑' }).data,
-        payload('contact', { firstName: 'Zoë', lastName: '王' }).data,
+        payload('contact', { firstName: 'Zoë', lastName: '王', jobTitle: 'デザイナー', websites: ['example.com', 'example.org/portfolio'], notes: 'Met at the café 👋\nFollow up next week.' }).data,
         payload('sms', { phone: '+14155550100', message: 'Hello 👋\n世界' }).data,
         payload('calendar', { ...event, title: 'Café 世界 👋' }).data,
     ];
