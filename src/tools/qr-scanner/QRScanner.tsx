@@ -91,10 +91,6 @@ export default function QRScanner() {
             setError('Choose an image file, such as PNG, JPEG, or WebP.');
             return;
         }
-        if (file.size > 25 * 1024 * 1024) {
-            setError('This image is too large. Choose an image smaller than 25 MB.');
-            return;
-        }
         const url = URL.createObjectURL(file);
         imageUrl.current = url;
         setSelected({ name: file.name, url });
@@ -208,7 +204,7 @@ export default function QRScanner() {
                     </div>
                     {mode === 'image' ? <>
                         <ImageInput onFile={scanImage} dragging={dragging} onDraggingChange={setDragging}
-                            title="Drop a QR code image here" formats={['PNG', 'JPEG', 'WebP', 'SVG']} maxFileSize="25 MB"
+                            title="Drop a QR code image here" formats={['PNG', 'JPEG', 'WebP', 'SVG']}
                             fileName={selected?.name} previewUrl={selected?.url} onRemove={reset}
                             loading={state === 'image'} loadingLabel="Scanning image…" />
                         {selected && <img className="qr-scanner__image ph-no-capture" src={selected.url} alt="Image selected for QR scanning" />}

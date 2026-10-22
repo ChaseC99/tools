@@ -36,6 +36,8 @@ Use the shared React `ImageInput` for the compact image picker. Pass `formats` a
 
 Pass `fileName` and `previewUrl` for its selected-image state with a Replace button, and `onRemove` to show an optional Remove button. The picker accepts drops in both states. `ImageDropZone` supports a render function for children that need their own browse button; it provides `openFilePicker` and uses a group role to avoid nesting buttons.
 
+Image pickers accept page-wide image paste without moving focus on load. A single visible, enabled picker receives the image automatically; with multiple pickers, click or focus one to select the paste destination. Paste in text fields and editable content is left alone. Loading, disabled, hidden, and inert pickers are excluded. Pasted files use the same `onFile` callback and tool-specific validation as file browsing and dropping.
+
 Use semantic tokens for interface chrome. Hard-coded colors are reserved for generated content and specialized visuals such as canvases, images, QR output, charts, palettes, color spectra, coins, and spinner wheels.
 
 ## Accessibility
