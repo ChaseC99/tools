@@ -10,9 +10,10 @@ type Props = {
     description: string;
     fullBleed?: boolean;
     hideNavigation?: boolean;
+    viewport?: string;
 };
 
-const { title, description, fullBleed = false, hideNavigation = false } = Astro.props;
+const { title, description, fullBleed = false, hideNavigation = false, viewport = "width=device-width" } = Astro.props;
 ---
 <html lang="en" data-theme="light">
     <head>
@@ -29,7 +30,7 @@ const { title, description, fullBleed = false, hideNavigation = false } = Astro.
             })();
         </script>
         <link rel="icon" href="/favicon.ico" />
-        <meta name="viewport" content="width=device-width" />
+        <meta name="viewport" content={viewport} />
         <meta name="generator" content={Astro.generator} />
         <title>{title}</title>
         <meta name="description" content={description} />

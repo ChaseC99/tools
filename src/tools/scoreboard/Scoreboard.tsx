@@ -297,17 +297,17 @@ export default function Scoreboard() {
                     return <div className="scoreboard-team" key={teamIndex} data-position={position} style={{ "--team-color": team.color } as CSSProperties}>
                         {scoreFeedback[teamIndex] > 0 && <span key={`feedback-${scoreFeedback[teamIndex]}`} className="scoreboard-point-feedback" aria-hidden="true" />}
                         <button className="scoreboard-add" type="button" onClick={() => onScore(teamIndex, 1)} disabled={!loaded} aria-label={`${team.name}, ${team.score} points. Add one point.`} aria-describedby={team.players.length ? `${id}-roster-${teamIndex}` : undefined}>
-                            <span className="scoreboard-team-heading"><span className="scoreboard-name">{team.name}</span>{team.players.length > 0 && <span id={`${id}-roster-${teamIndex}`} className="scoreboard-players" title={team.players.join(", ")}>{team.players.join(" · ")}</span>}</span>
+                            <span className="scoreboard-team-heading"><span className="scoreboard-name">{team.name}</span>{game.teams.some(value => value.players.length > 0) && <span id={`${id}-roster-${teamIndex}`} className="scoreboard-players" aria-hidden={team.players.length === 0 || undefined} title={team.players.join(", ")}>{team.players.join(" · ")}</span>}</span>
                             <span key={`score-${scoreFeedback[teamIndex]}`} className="scoreboard-score" data-feedback={scoreFeedback[teamIndex] > 0 || undefined} style={{ "--score-width": `${Math.min(66, 135 / Math.max(2, digits))}cqw` } as CSSProperties}>{team.score}</span>
                         </button>
                         <button className="scoreboard-minus" type="button" disabled={!loaded || team.score === 0} onClick={() => onScore(teamIndex, -1)} aria-label={`Subtract one point from ${team.name}`}><span aria-hidden="true">−</span></button>
                     </div>;
                 })}
                 <div className="scoreboard-toolbar" role="group" aria-label="Scoreboard controls">
-                    <button className="ui-button scoreboard-swap" data-variant="ghost" type="button" disabled={!loaded} onClick={() => {
+                    <button className="ui-button scoreboard-swap" data-variant="ghost" type="button" aria-label="Swap sides" disabled={!loaded} onClick={() => {
                         const next = swapSides(gameRef.current); updateGame(next);
                         setAnnouncement(`Sides swapped. ${next.teams[next.order[0]].name} is on the left.`);
-                    }}><Icon name="swap" />Swap sides</button>
+                    }}><Icon name="swap" /><span className="scoreboard-swap-label">Swap sides</span></button>
                     <a ref={settingsLinkRef} href="#settings" className="ui-button ui-icon-button scoreboard-settings-button" data-variant="ghost" aria-label="Open scoreboard settings"><Icon name="settings" /></a>
                 </div>
             </div>

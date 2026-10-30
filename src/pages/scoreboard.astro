@@ -3,7 +3,7 @@ import PageLayout from "@layouts/PageLayout.astro";
 import ScoreboardComponent from "@tools/scoreboard/Scoreboard.tsx";
 ---
 
-<PageLayout title="Scoreboard" description="Keep score with two large, mobile-friendly team panels. Customize team names, players, colors, scores, and winning rules for your next match." fullBleed hideNavigation>
+<PageLayout title="Scoreboard" description="Keep score with two large, mobile-friendly team panels. Customize team names, players, colors, scores, and winning rules for your next match." fullBleed hideNavigation viewport="width=device-width, initial-scale=1, viewport-fit=cover">
     <ScoreboardComponent client:load />
 </PageLayout>
 
@@ -15,5 +15,10 @@ import ScoreboardComponent from "@tools/scoreboard/Scoreboard.tsx";
         min-height: 0;
         overflow: hidden;
         overscroll-behavior: none;
+    }
+
+    html {
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
     }
 </style>
