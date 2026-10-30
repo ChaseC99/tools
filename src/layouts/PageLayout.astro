@@ -9,9 +9,10 @@ type Props = {
     title: string;
     description: string;
     fullBleed?: boolean;
+    hideNavigation?: boolean;
 };
 
-const { title, description, fullBleed = false } = Astro.props;
+const { title, description, fullBleed = false, hideNavigation = false } = Astro.props;
 ---
 <html lang="en" data-theme="light">
     <head>
@@ -35,7 +36,7 @@ const { title, description, fullBleed = false } = Astro.props;
         <PostHog />
     </head>
     <body>
-        <Navbar title={title}/>
+        {!hideNavigation && <Navbar title={title}/>}
         <main id="page-content" class:list={{ "is-full-bleed": fullBleed }}>
             <slot />
         </main>

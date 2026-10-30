@@ -1,0 +1,19 @@
+---
+import PageLayout from "@layouts/PageLayout.astro";
+import ScoreboardComponent from "@tools/scoreboard/Scoreboard.tsx";
+---
+
+<PageLayout title="Scoreboard" description="Keep score with two large, mobile-friendly team panels. Customize team names, players, colors, scores, and winning rules for your next match." fullBleed hideNavigation>
+    <ScoreboardComponent client:load />
+</PageLayout>
+
+<style is:global>
+    /* Keep the page fixed while settings and dialogs scroll independently. */
+    html,
+    body {
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
+        overscroll-behavior: none;
+    }
+</style>
