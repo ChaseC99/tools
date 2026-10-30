@@ -55,29 +55,54 @@ test("subtracting an accidental winning point allows the corrected win to celebr
     assert.equal(changeScore(corrected.game, 0, 1).celebrate, 0);
 });
 
-test("cap results appear on the first cap point, including after an earlier winning score", () => {
-    const tied = match([29, 29], { cap: 30 });
-    assert.equal(changeScore(tied, 1, 1).capWinner, 1);
-    const continued = match([29, 20], { cap: 30 });
-    continued.hasCelebrated = true;
-    const capped = changeScore(continued, 0, 1);
-    assert.equal(capped.celebrate, null);
-    assert.equal(capped.capWinner, 0);
-    assert.equal(changeScore(capped.game, 0, 1).capWinner, null);
-    assert.equal(changeScore(match([29, 30], { cap: 30 }), 0, 1).capWinner, null);
-    assert.equal(changeScore(match([24, 23]), 0, 1).capWinner, null);
-    assert.equal(changeScore(createGame(), 0, -1).capWinner, null);
-    const corrected = changeScore(capped.game, 0, -1);
-    assert.equal(corrected.capWinner, null);
-    assert.equal(changeScore(corrected.game, 0, 1).capWinner, 0);
+test("all winning rules emit a result on the winning point", () => {
+    for (const [scores, rules, team, expected] of [
+        [[24, 23], {}, 0, 0],
+        [[24, 24], { winByTwo: false }, 1, 1],
+        [[24, 24], {}, 0, null],
+        [[25, 24], {}, 0, 0],
+        [[29, 29], { cap: 30 }, 1, 1],
+        [[24, 24], { cap: 25 }, 0, 0],
+    ]) {
+        const result = changeScore(match(scores, rules), team, 1);
+        assert.equal(result.celebrate, expected, JSON.stringify({ scores, rules, team }));
+    }
 });
 
-test("shared final scores retain team identities after swapping sides", () => {
+test("continuing a won match does not emit a second result at the cap", () => {
+    let game = changeScore(match([24, 23], { cap: 30 }), 0, 1).game;
+    for (let score = 26; score <= 31; score++) {
+        const result = changeScore(game, 0, 1);
+        assert.equal(result.celebrate, null);
+        assert.equal(result.game.teams[0].score, score);
+        game = result.game;
+    }
+});
+
+test("correcting a cap-winning point allows the corrected win to show again", () => {
+    const capped = changeScore(match([29, 29], { cap: 30 }), 1, 1);
+    assert.equal(capped.celebrate, 1);
+    const corrected = changeScore(capped.game, 1, -1);
+    assert.equal(corrected.celebrate, null);
+    assert.equal(corrected.game.hasCelebrated, false);
+    assert.equal(changeScore(corrected.game, 1, 1).celebrate, 1);
+});
+
+test("shared final scores include rosters and retain team identities after swapping sides", () => {
     const game = match([30, 29], { cap: 30 });
     game.teams[0].name = "Blue & Gold";
+    game.teams[0].players = ["Chase", "Rachel"];
     game.teams[1].name = "Away";
-    assert.equal(finalScoreText(game, 0), "Blue & Gold wins!\nFinal score: Blue & Gold 30 – 29 Away");
-    assert.equal(finalScoreText(swapSides(game), 0), "Blue & Gold wins!\nFinal score: Away 29 – 30 Blue & Gold");
+    game.teams[1].players = ["Connor", "Alex"];
+    assert.equal(finalScoreText(game), "Blue & Gold 30 - 29 Away\n\nBlue & Gold: Chase, Rachel\nAway: Connor, Alex");
+    assert.equal(finalScoreText(swapSides(game)), "Away 29 - 30 Blue & Gold\n\nAway: Connor, Alex\nBlue & Gold: Chase, Rachel");
+});
+
+test("shared scores omit empty rosters and unnecessary blank lines", () => {
+    const game = match([25, 23]);
+    assert.equal(finalScoreText(game), "Team A 25 - 23 Team B");
+    game.teams[1].players = ["Sam"];
+    assert.equal(finalScoreText(game), "Team A 25 - 23 Team B\n\nTeam B: Sam");
 });
 
 test("swapping moves the display positions without changing team identity or winning rules", () => {

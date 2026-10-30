@@ -49,34 +49,33 @@ export function getWinner(game) {
  * @param {ScoreboardGame} game
  * @param {TeamIndex} team
  * @param {1 | -1} delta
- * @returns {{ game: ScoreboardGame, celebrate: TeamIndex | null, capWinner: TeamIndex | null }}
+ * @returns {{ game: ScoreboardGame, celebrate: TeamIndex | null }}
  */
 export function changeScore(game, team, delta) {
     const score = Math.max(0, Math.min(MAX_SCORE, game.teams[team].score + delta));
-    if (score === game.teams[team].score) return { game, celebrate: null, capWinner: null };
+    if (score === game.teams[team].score) return { game, celebrate: null };
 
     const next = {
         ...game,
         teams: /** @type {[Team, Team]} */ (game.teams.map((value, index) => index === team ? { ...value, score } : value)),
     };
     const winner = getWinner(next);
-    // Correcting the winning point can re-arm the celebration. Continuing a
-    // finished game does not trigger confetti again at each new two-point lead.
+    // Correcting the winning point can re-arm the result. Continuing a finished
+    // game never reopens the dialog, even at a later two-point lead or the cap.
     if (delta === -1 && winner === null) next.hasCelebrated = false;
     const celebrate = delta === 1 && !next.hasCelebrated && getWinner(game) === null ? winner : null;
     if (celebrate !== null) next.hasCelebrated = true;
-    // The cap gets its own result even if play continued after an earlier win.
-    // Continuing past the cap never opens another alert; correcting that point can.
-    const cap = game.rules.cap;
-    const capWinner = delta === 1 && cap !== null && score === cap
-        && game.teams.every(value => value.score < cap) ? team : null;
-    return { game: next, celebrate, capWinner };
+    return { game: next, celebrate };
 }
 
-/** @param {ScoreboardGame} game @param {TeamIndex} winner */
-export function finalScoreText(game, winner) {
-    const [left, right] = game.order.map(index => game.teams[index]);
-    return `${game.teams[winner].name} wins!\nFinal score: ${left.name} ${left.score} – ${right.score} ${right.name}`;
+/** @param {ScoreboardGame} game */
+export function finalScoreText(game) {
+    const teams = game.order.map(index => game.teams[index]);
+    const [left, right] = teams;
+    const score = `${left.name} ${left.score} - ${right.score} ${right.name}`;
+    const rosters = teams.filter(team => team.players.length > 0)
+        .map(team => `${team.name}: ${team.players.join(", ")}`).join("\n");
+    return rosters ? `${score}\n\n${rosters}` : score;
 }
 
 /** @param {ScoreboardGame} game @returns {ScoreboardGame} */

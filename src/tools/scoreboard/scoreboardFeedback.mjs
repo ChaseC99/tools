@@ -11,14 +11,14 @@ export function hapticFeedback(browser, win = false) {
 /**
  * Called directly from the share button to retain browser user activation.
  * Canceling the native sheet does not copy anything or report an error.
- * @param {{ share?: (data: {title: string, text: string}) => Promise<void>, clipboard?: {writeText: (text: string) => Promise<void>} }} browser
+ * @param {{ share?: (data: {text: string}) => Promise<void>, clipboard?: {writeText: (text: string) => Promise<void>} }} browser
  * @param {string} text
  * @returns {Promise<"shared" | "cancelled" | "copied" | "manual">}
  */
 export async function shareFinalScore(browser, text) {
     if (typeof browser.share === "function") {
         try {
-            await browser.share({ title: "Final score", text });
+            await browser.share({ text });
             return "shared";
         } catch (error) {
             if (error?.name === "AbortError") return "cancelled";

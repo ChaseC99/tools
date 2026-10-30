@@ -12,11 +12,11 @@ test("haptics use short point/win patterns and tolerate unsupported or blocked v
     assert.doesNotThrow(() => hapticFeedback({ vibrate() { throw new Error("Blocked"); } }));
 });
 
-test("native sharing receives the final score immediately, without also copying it", async () => {
-    const text = "Blue wins!\nFinal score: Blue 30 – 29 Gold";
+test("native sharing receives only the score text, without a separate title or attachments", async () => {
+    const text = "Blue 30 - 29 Gold\n\nBlue: Chase, Rachel\nGold: Connor, Alex";
     let payload;
     const result = shareFinalScore({ share: async data => { payload = data; }, clipboard: { writeText: async () => assert.fail("Unexpected clipboard write") } }, text);
-    assert.deepEqual(payload, { title: "Final score", text });
+    assert.deepEqual(payload, { text });
     assert.equal(await result, "shared");
 });
 

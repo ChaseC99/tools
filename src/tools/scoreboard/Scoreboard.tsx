@@ -97,7 +97,7 @@ function WinningDialog({ result, celebration, onClose }: { result: FinalResult; 
     const [sharing, setSharing] = useState(false);
     const [shareStatus, setShareStatus] = useState<"shared" | "cancelled" | "copied" | "manual" | null>(null);
     const id = useId();
-    const text = finalScoreText(result.game, result.winner);
+    const text = finalScoreText(result.game);
 
     useEffect(() => {
         const trigger = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -121,7 +121,7 @@ function WinningDialog({ result, celebration, onClose }: { result: FinalResult; 
     return <dialog ref={dialogRef} className="scoreboard-win-dialog" aria-labelledby={`${id}-title`} aria-describedby={`${id}-final`} onCancel={onClose}>
         {celebration && <Confetti key={celebration.id} colors={celebration.colors} />}
         <button ref={closeRef} className="ui-button ui-icon-button scoreboard-win-close" data-variant="ghost" type="button" aria-label="Close final score" onClick={onClose}><Icon name="close" /></button>
-        <p className="scoreboard-win-eyebrow">Win cap reached</p>
+        <p className="scoreboard-win-eyebrow">Match result</p>
         <h2 id={`${id}-title`}>{result.game.teams[result.winner].name} wins!</h2>
         <p className="scoreboard-win-label">Final score</p>
         <div className="scoreboard-final-scores" id={`${id}-final`}>
@@ -247,15 +247,15 @@ export default function Scoreboard() {
         if (result.game === gameRef.current) return;
         updateGame(result.game); announceScore(result.game);
         setScoreFeedback(current => current.map((count, index) => index === team ? count + 1 : count) as [number, number]);
-        hapticFeedback(navigator, result.capWinner !== null);
+        const winner = result.celebrate;
+        hapticFeedback(navigator, winner !== null);
         if (getWinner(result.game) === null) setCelebration(null);
-        const winner = result.capWinner ?? result.celebrate;
         if (winner !== null) {
             const name = result.game.teams[winner].name;
             setCelebration({ id: ++celebrationId.current, name, colors: [...result.game.teams.map(value => value.color), "#ecc34d", "#ce70c8"] });
             setAnnouncement(`${name} wins! You can continue scoring.`);
+            setFinalResult({ game: result.game, winner });
         }
-        if (result.capWinner !== null) setFinalResult({ game: result.game, winner: result.capWinner });
     }
 
     function updateDraft(next: SettingsDraft) {
