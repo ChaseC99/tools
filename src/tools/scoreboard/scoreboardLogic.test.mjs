@@ -88,21 +88,30 @@ test("correcting a cap-winning point allows the corrected win to show again", ()
     assert.equal(changeScore(corrected.game, 1, 1).celebrate, 1);
 });
 
-test("shared final scores include rosters and retain team identities after swapping sides", () => {
-    const game = match([30, 29], { cap: 30 });
+test("shared scores use one line per team and link to the complete winning snapshot", () => {
+    const game = changeScore(match([29, 29], { cap: 30 }), 0, 1).game;
     game.teams[0].name = "Blue & Gold";
     game.teams[0].players = ["Chase", "Rachel"];
+    game.teams[0].color = "#123abc";
     game.teams[1].name = "Away";
     game.teams[1].players = ["Connor", "Alex"];
-    assert.equal(finalScoreText(game), "Blue & Gold 30 - 29 Away\n\nBlue & Gold: Chase, Rachel\nAway: Connor, Alex");
-    assert.equal(finalScoreText(swapSides(game)), "Away 29 - 30 Blue & Gold\n\nAway: Connor, Alex\nBlue & Gold: Chase, Rachel");
+    const text = finalScoreText(game, "https://tools.example/scoreboard?scoreA=29&scoreB=29#settings");
+    const lines = text.split("\n");
+    assert.equal(lines.length, 4);
+    assert.deepEqual(lines.slice(0, 3), ["30 : Blue & Gold", "29 : Away", ""]);
+    const url = new URL(lines[3]);
+    assert.equal(url.origin, "https://tools.example");
+    assert.equal(url.pathname, "/scoreboard");
+    assert.equal(url.hash, "#scoreboard");
+    const previousMatch = match([7, 11], { target: 21, winByTwo: false });
+    assert.deepEqual(gameFromSearch(url.search, previousMatch), game);
 });
 
-test("shared scores omit empty rosters and unnecessary blank lines", () => {
-    const game = match([25, 23]);
-    assert.equal(finalScoreText(game), "Team A 25 - 23 Team B");
-    game.teams[1].players = ["Sam"];
-    assert.equal(finalScoreText(game), "Team A 25 - 23 Team B\n\nTeam B: Sam");
+test("shared scores and their configured link preserve swapped sides", () => {
+    const game = swapSides(changeScore(match([24, 23]), 0, 1).game);
+    const lines = finalScoreText(game, "https://tools.example/scoreboard").split("\n");
+    assert.deepEqual(lines.slice(0, 3), ["23 : Team B", "25 : Team A", ""]);
+    assert.deepEqual(gameFromSearch(new URL(lines[3]).search), game);
 });
 
 test("swapping moves the display positions without changing team identity or winning rules", () => {

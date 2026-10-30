@@ -13,7 +13,7 @@ test("haptics use short point/win patterns and tolerate unsupported or blocked v
 });
 
 test("native sharing receives only the score text, without a separate title or attachments", async () => {
-    const text = "Blue 30 - 29 Gold\n\nBlue: Chase, Rachel\nGold: Connor, Alex";
+    const text = "30 : Blue\n29 : Gold\n\nhttps://tools.example/scoreboard?teamA=Blue&scoreA=30&teamB=Gold&scoreB=29&cap=30#scoreboard";
     let payload;
     const result = shareFinalScore({ share: async data => { payload = data; }, clipboard: { writeText: async () => assert.fail("Unexpected clipboard write") } }, text);
     assert.deepEqual(payload, { text });

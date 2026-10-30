@@ -5,7 +5,7 @@ import type { ScoreboardGame, SettingsDraft, Team, TeamIndex, TeamInput } from "
 import "./Scoreboard.css";
 
 type Celebration = { id: number; name: string; colors: string[] };
-type FinalResult = { game: ScoreboardGame; winner: TeamIndex };
+type FinalResult = { game: ScoreboardGame; winner: TeamIndex; shareText: string };
 
 function Icon({ name }: { name: "settings" | "swap" | "close" | "browse" | "link" | "chevron" | "share" }) {
     return (
@@ -97,7 +97,7 @@ function WinningDialog({ result, celebration, onClose }: { result: FinalResult; 
     const [sharing, setSharing] = useState(false);
     const [shareStatus, setShareStatus] = useState<"shared" | "cancelled" | "copied" | "manual" | null>(null);
     const id = useId();
-    const text = finalScoreText(result.game);
+    const text = result.shareText;
 
     useEffect(() => {
         const trigger = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -254,7 +254,7 @@ export default function Scoreboard() {
             const name = result.game.teams[winner].name;
             setCelebration({ id: ++celebrationId.current, name, colors: [...result.game.teams.map(value => value.color), "#ecc34d", "#ce70c8"] });
             setAnnouncement(`${name} wins! You can continue scoring.`);
-            setFinalResult({ game: result.game, winner });
+            setFinalResult({ game: result.game, winner, shareText: finalScoreText(result.game, window.location.href) });
         }
     }
 

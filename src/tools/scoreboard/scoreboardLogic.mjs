@@ -68,14 +68,17 @@ export function changeScore(game, team, delta) {
     return { game: next, celebrate };
 }
 
-/** @param {ScoreboardGame} game */
-export function finalScoreText(game) {
-    const teams = game.order.map(index => game.teams[index]);
-    const [left, right] = teams;
-    const score = `${left.name} ${left.score} - ${right.score} ${right.name}`;
-    const rosters = teams.filter(team => team.players.length > 0)
-        .map(team => `${team.name}: ${team.players.join(", ")}`).join("\n");
-    return rosters ? `${score}\n\n${rosters}` : score;
+/** @param {ScoreboardGame} game @param {string} pageUrl */
+export function finalScoreText(game, pageUrl) {
+    const scores = game.order.map(index => {
+        const team = game.teams[index];
+        return `${team.score} : ${team.name}`;
+    }).join("\n");
+    // Serialize the winning snapshot, even before the address bar has updated.
+    const url = new URL(pageUrl);
+    url.search = gameToSearch(game);
+    url.hash = "scoreboard";
+    return `${scores}\n\n${url}`;
 }
 
 /** @param {ScoreboardGame} game @returns {ScoreboardGame} */
