@@ -90,7 +90,7 @@ function readSavedGame() {
     catch { return createGame(); }
 }
 
-function WinningDialog({ result, celebration, onClose }: { result: FinalResult; celebration: Celebration | null; onClose: () => void }) {
+function WinningDialog({ result, celebration, onClose, onRequestReset }: { result: FinalResult; celebration: Celebration | null; onClose: () => void; onRequestReset: () => void }) {
     const dialogRef = useRef<HTMLDialogElement>(null);
     const closeRef = useRef<HTMLButtonElement>(null);
     const copyRef = useRef<HTMLTextAreaElement>(null);
@@ -137,6 +137,7 @@ function WinningDialog({ result, celebration, onClose }: { result: FinalResult; 
         <div className="scoreboard-win-actions">
             <button className="ui-button" type="button" onClick={share} disabled={sharing}><Icon name="share" />{sharing ? "Opening share…" : "Share score"}</button>
             <button className="ui-button" data-variant="secondary" type="button" onClick={onClose}>Continue scoring</button>
+            <button className="ui-button" data-variant="danger" type="button" onClick={onRequestReset}>Reset scores</button>
         </div>
         <p className="scoreboard-result-share-status" role="status">{shareStatus === "copied" ? "Score copied. Paste it into a message." : shareStatus === "manual" ? "Copy the score below to share it." : ""}</p>
         {(shareStatus === "copied" || shareStatus === "manual") && <label className="ui-field scoreboard-result-copy"><span className="ui-label">Score to share</span><textarea ref={copyRef} className="ui-textarea" readOnly rows={3} value={text} onFocus={event => event.currentTarget.select()} /></label>}
@@ -232,9 +233,14 @@ export default function Scoreboard() {
 
     useEffect(() => {
         if (!confirmReset) return;
+        const trigger = document.activeElement instanceof HTMLElement ? document.activeElement : null;
         const dialog = dialogRef.current;
-        dialog?.showModal(); cancelResetRef.current?.focus();
-        return () => { dialog?.close(); resetButtonRef.current?.focus(); };
+        dialog?.showModal(); cancelResetRef.current?.focus({ preventScroll: true });
+        return () => {
+            dialog?.close();
+            if (trigger?.isConnected) trigger.focus({ preventScroll: true });
+            else settingsLinkRef.current?.focus({ preventScroll: true });
+        };
     }, [confirmReset]);
 
     function announceScore(next: ScoreboardGame) {
@@ -277,6 +283,7 @@ export default function Scoreboard() {
         const next = applySettings(current, current.teams.map(team => ({ ...team, score: 0 })) as [Team, Team], current.rules);
         next.hasCelebrated = false;
         updateGame(next); setDraft(settingsDraft(next)); setErrors({}); setConfirmReset(false);
+        setFinalResult(null); setCelebration(null);
         setAnnouncement("Both scores reset to zero.");
     }
 
@@ -396,7 +403,7 @@ export default function Scoreboard() {
                 <h2 id={`${id}-reset-title`}>Reset both scores?</h2><p id={`${id}-reset-description`}>Both scores will return to 0.</p>
                 <div className="scoreboard-reset-actions"><button ref={cancelResetRef} className="ui-button" data-variant="secondary" type="button" onClick={() => setConfirmReset(false)}>Keep scores</button><button className="ui-button" data-variant="danger" type="button" onClick={resetScores}>Reset scores</button></div>
             </dialog>
-            {finalResult && <WinningDialog result={finalResult} celebration={celebration} onClose={() => { setFinalResult(null); setCelebration(null); }} />}
+            {finalResult && <WinningDialog result={finalResult} celebration={celebration} onClose={() => { setFinalResult(null); setCelebration(null); }} onRequestReset={() => setConfirmReset(true)} />}
             {celebration && !finalResult && <><Confetti key={celebration.id} colors={celebration.colors} /><div className="scoreboard-celebration" aria-hidden="true"><span>{celebration.name} wins!</span></div></>}
             <span className="ui-sr-only" role="status" aria-live="polite" aria-atomic="true">{announcement}</span>
             <noscript>Enable JavaScript to keep score.</noscript>
